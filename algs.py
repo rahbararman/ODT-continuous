@@ -42,3 +42,5 @@ def EC2(h_probs, document, hypotheses, decision_regions, theta, priors, observat
             best_feature = feature
     return best_feature, G
 
+
+
