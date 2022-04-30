@@ -1,5 +1,12 @@
+from matplotlib.pyplot import thetagrids
 import numpy as np
 import networkx as nx
+import pandas as pd
+from sklearn.datasets import fetch_20newsgroups
+from sklearn.metrics import accuracy_score, f1_score
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import minmax_scale
 class Hypothesis:
     def __init__(self, value, is_active=True, decision_region=None):
         self.value = value
@@ -15,11 +22,11 @@ def binary(num, length):
 
 
 
-def compute_initial_h_probs(theta, priors, hypothses):
+def compute_initial_h_probs(thetas, priors, hypothses):
     '''
     return a dictionary containing probabilities of each hypothesis (p(h)) with h's as keys
     parameters:
-        theta: the condictional probabilites. m*n ndarray where m is the number of decision regions and n is the number of features
+        thetas: the condictional probabilites. a list of m*n ndarrays where m is the number of decision regions and n is the number of features
         priors: prior probabilities of decision regions (ys)
         hypothses: ndarray containing all hypotheses (objects) 
     '''
@@ -28,9 +35,9 @@ def compute_initial_h_probs(theta, priors, hypothses):
         p_h_y = 1
         for feature, value in enumerate(h.value):
             if int(float(value))==1:
-                p_h_y = p_h_y * theta[:,feature] 
+                p_h_y = p_h_y * thetas[0][:,feature] 
             else:
-                p_h_y = p_h_y * (1-theta[:,feature])
+                p_h_y = p_h_y * (1-thetas[0][:,feature])
         
         p_h = sum(priors*p_h_y)
         probs[h.value] = p_h
@@ -55,24 +62,24 @@ def find_inconsistent_hypotheses(feature, hypotheses, feature_value):
     return inconsistent_hypotheses
 
 
-def calculate_p_y_xA(theta, priors, observations):
+def calculate_p_y_xA(thetas, priors, observations):
     #checked
     '''
     returns a ndarray containing p(y|x_A) for all ys
     parameters:
-        theta: the condictional probabilites. m*n ndarray where m is the number of decision regions and n is the number of features
+        thetas: the condictional probabilites. a list of m*n ndarrays where m is the number of decision regions and n is the number of features
         priors: prior probabilities of decision regions (ys)
-        observations: a dictionary containing queried features and respective values 
+        observations: a dictionary containing queried features as keys and  (thr_ind,value) as values.
     '''
     if (len(observations.items())==0):
         return priors
     #calculate p_xA
     p_xA_y = 1
-    for feature, value in observations.items():
+    for feature, (thr_ind,value) in observations.items():
         if int(value)==1:
-            p_xA_y = p_xA_y * theta[:,int(feature)] 
+            p_xA_y = p_xA_y * thetas[thr_ind][:,int(feature)] 
         else:
-            p_xA_y = p_xA_y * (1-theta[:,int(feature)])
+            p_xA_y = p_xA_y * (1-thetas[thr_ind][:,int(feature)])
             
     
     p_xA = sum(priors*p_xA_y)
@@ -82,22 +89,21 @@ def calculate_p_y_xA(theta, priors, observations):
     return p_y_xA
 
 
-def calculate_p_feature_xA(feature, theta, p_y_xA, feature_value):
+def calculate_p_feature_xA(feature, thetas, p_y_xA, feature_value):
     #checked
     '''
     parameters:
-        theta: the condictional probabilites. m*n ndarray where m is the number of decision regions and n is the number of features
+        thetas: the condictional probabilites. a list of m*n ndarrays where m is the number of decision regions and n is the number of features
         priors: prior probabilities of decision regions (ys)
-        feature_value: value of the feature. 1 or 0
+        feature_value: (thr_ind, value) of the feature. 1 or 0
     '''
-    if int(feature_value) == 1:
-        p_x_y = theta[:, int(feature)]    
+    if int(feature_value[1]) == 1:
+        p_x_y = thetas[feature_value[0]][:, int(feature)]    
     else:
-        p_x_y = 1 - theta[:,int(feature)]
+        p_x_y = 1 - thetas[feature_value[0]][:,int(feature)]
         
     p_feature_xA = sum(p_x_y*p_y_xA)
     
-#     print(p_feature_xA)
     return p_feature_xA
 
 def calculate_expected_cut(feature,p_feature_xA, p_not_feature_xA, G, hypotheses):
@@ -125,14 +131,76 @@ def calculate_expected_cut(feature,p_feature_xA, p_not_feature_xA, G, hypotheses
     edges_not_feature = G.edges(nbunch=[h.value for h in hypotheses_not_feature], data=True)
     sum_weights_not_feature = sum([w['weight'] for (u,v,w) in edges_not_feature])
     
-#     print(sum_weights_feature)
-#     print(p_feature_xA)
-#     print(sum_weights_not_feature)
-#     print(p_not_feature_xA)
-    
     #step4: Calculate the expectation
     expected_cut = p_feature_xA * sum_weights_feature + p_not_feature_xA *sum_weights_not_feature
-#     print(expected_cut)
     return expected_cut
+
+def calculate_total_accuracy(theta, thr, data, priors, metric='accuracy'):
+    y_pred = []
+    y_true = []
+    for i in range(len(data)):
+        doc = data.iloc[i].to_dict()
+        document_label = doc.pop('label', None)
+        p_ob_y = 1
+        for feature, value in doc.items():
+            feature = int(float(feature))
+            if value > thr:
+                value = 1
+            else:
+                value = 0
+            value = int(float(value))
+
+            if value == 1:
+                p_ob_y = p_ob_y * theta[:,int(feature)]
+            else:
+                p_ob_y = p_ob_y * (1-theta[:,int(feature)])
+        y_pred.append(np.argmax(priors*p_ob_y))
+        y_true.append(document_label)
+    perf = 0.0
+    if metric == 'accuracy':
+        perf = accuracy_score(y_true, y_pred)
+    if metric == 'fscore':
+        perf = f1_score(y_true, y_pred, average='weighted')
+    return perf
+
+
+def estimate_priors_and_theta(dataset, rand_state):
+    if dataset == '20newsgroup':
+        vectorizer = TfidfVectorizer(stop_words='english',max_features=100)
+        newsgroups = fetch_20newsgroups(subset='all')
+        X = vectorizer.fit_transform(newsgroups.data).toarray()
+        X = minmax_scale(X)
+        X_train, X_test, y_train, y_test = train_test_split(X, newsgroups.target,test_size=0.3, random_state=rand_state)
+        y_train = pd.DataFrame(y_train, columns=['label'])
+        X_train = pd.DataFrame(X_train)
+        y_test = pd.DataFrame(y_test, columns=['label'])
+        X_test = pd.DataFrame(X_test)
+    
+    
+    data_csv = pd.concat([X_train,y_train], axis=1)
+    test_csv = pd.concat([X_test,y_test], axis=1)
+    
+    num_features = data_csv.shape[1]-1
+    num_classes = len(np.unique(test_csv['label'].to_numpy()))
+    
+    params = []
+    for i in range(9):
+        params.append(np.ones((num_classes, num_features, 2)))
+    
+    thetas = []
+    for i in range(9):
+        thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
+    
+    possible_ys = sorted(list(set(test_csv['label'].to_numpy())))
+    priors = []
+    for l in possible_ys:
+        priors.append(1.0/len(possible_ys))
+        
+    
+    return thetas, np.array(priors), test_csv, data_csv
+
+
+
+
 
 
