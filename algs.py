@@ -4,12 +4,11 @@ import numpy as np
 from discretize import find_best_threshold
 
 from utils import Hypothesis, calculate_expected_cut, calculate_p_feature_xA, calculate_p_y_xA, compute_initial_h_probs, estimate_priors_and_theta, find_inconsistent_hypotheses
-params = None
 epsilon = 1.0
 min_epsilon = 0.01
 decay_rate = 1.0
 
-def EC2(h_probs, document, hypotheses, decision_regions, thetas, priors, observations, G=None, epsilon=0.0):
+def EC2(thresholds,h_probs, document, hypotheses, decision_regions, thetas, priors, observations, G=None, epsilon=0.0):
 
     '''
     Return the next feature to be queried and the current graph
@@ -25,7 +24,6 @@ def EC2(h_probs, document, hypotheses, decision_regions, thetas, priors, observa
     note: hypothesis names are the respective decimal number of the binary realization
     '''
     #building the graph if it is none
-    thresholds = list(np.linspace(0.1,0.9,9))
     if G is None:
         G = nx.Graph()
         for i in range(len(hypotheses)):
@@ -178,7 +176,7 @@ def US(theta, priors, observations, document, h_probs, hypothses):
 
 
 
-def decision_tree_learning(document, thetas, max_steps, priors, hypothses, decision_regions, criterion): 
+def decision_tree_learning(thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion): 
     '''
     Receives a document and builds a decision tree with the EC2 algorithm.
     Parameters:
@@ -199,9 +197,9 @@ def decision_tree_learning(document, thetas, max_steps, priors, hypothses, decis
     for step in range(max_steps):
         if ('EC2' in criterion):
             if (criterion == "EC2_epsgreedy"):
-                feature_to_be_queried, thr, thr_ind, G = EC2(h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, epsilon)
+                feature_to_be_queried, thr, thr_ind, G = EC2(thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, epsilon)
             else:
-                feature_to_be_queried, thr, thr_ind, G = EC2(h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, 0.0)
+                feature_to_be_queried, thr, thr_ind, G = EC2(thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, 0.0)
             #query the next feature.
             feature_value = document[feature_to_be_queried]
             if feature_value > thr:
@@ -371,7 +369,7 @@ def sample_hypotheses(N, thetas, priors, random_state, total_samples):
                 break
     return hypothses, decision_regions
 
-    
+
 
 
 
