@@ -84,6 +84,30 @@ def main():
             print(accs_all)
             print(all_sum)
 
+        sums_all_EC2[num_sampled_hypos] = all_sum
+
+        utility_all_EC2[num_sampled_hypos] = accs_all
+        
+        utility_progress_EC2[num_sampled_hypos] = acc_in_progress
+       
+        numtest_progress_EC2[num_sampled_hypos] = num_in_progress
+        
+        norm_progress_EC2[num_sampled_hypos] = norm_in_progress
+    
+        total_accuracy_progress_EC2[num_sampled_hypos] = total_in_progress
+
+    import pickle
+    to_save = [total_accuracy_progress_EC2, 
+               norm_progress_EC2,
+               utility_progress_EC2, 
+               numtest_progress_EC2, 
+               sums_all_EC2,  
+               utility_all_EC2]
+    f = open("total_dics_EC2_"+dataset+".pkl", "wb")
+    pickle.dump(to_save,f)
+    f.close()
+    
+
 
 
 
