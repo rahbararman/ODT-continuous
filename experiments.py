@@ -8,7 +8,7 @@ from algs import decision_tree_learning, sample_hypotheses
 
 from utils import calculate_total_accuracy, estimate_priors_and_theta
 import pickle
-
+#parse arguments
 parser=argparse.ArgumentParser()
 
 parser.add_argument('--rand', default=101)
