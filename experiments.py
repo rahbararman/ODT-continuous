@@ -7,12 +7,14 @@ from sklearn.metrics import accuracy_score
 from algs import decision_tree_learning, sample_hypotheses
 
 from utils import calculate_total_accuracy, estimate_priors_and_theta
+import pickle
 
 parser=argparse.ArgumentParser()
 
 parser.add_argument('--rand', default=101)
 parser.add_argument('--dataset', default='20newsgroup')
 parser.add_argument('--thresholds', default=9)
+parser.add_argument('--criterion', default='EC2')
 
 args=parser.parse_args()
 
@@ -21,19 +23,19 @@ args=parser.parse_args()
 def main():
     random_states = list(range(int(args.rand), int(args.rand)+5))
     
-    #EC2 continuous
     dataset = args.dataset
+    criterion = args.criterion
     thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
     min_num_hypotheses = 100
     max_num_hypotheses = 1000
     hypotheses_step = 100
 
-    sums_all_EC2 = {}
-    utility_all_EC2 = {}
-    utility_progress_EC2 = {}
-    numtest_progress_EC2 = {}
-    norm_progress_EC2 = {}
-    total_accuracy_progress_EC2 = {}
+    sums_all = {}
+    utility_all = {}
+    utility_progress = {}
+    numtest_progress = {}
+    norm_progress = {}
+    total_accuracy_progress = {}
 
     for num_sampled_hypos in range(min_num_hypotheses, max_num_hypotheses, hypotheses_step):
 
@@ -54,7 +56,7 @@ def main():
             hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos)
             print('sampled')
             accs = []
-            print('Experimenting with EC2')
+            print('Experimenting with ' + criterion)
             max_steps_values = [test_csv.shape[1]-1]
             print('max steps = '+ str(max_steps_values[0]))  
             for max_steps in max_steps_values:
@@ -65,7 +67,7 @@ def main():
                     if i%1 == 0:
                         print(i)
                     doc = test_csv.iloc[i].to_dict()
-                    obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, 'EC2')
+                    obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion)
                     sum_queries+=len(obs.items())
                     y_true.append(y)
                     y_pred.append(y_hat)
@@ -84,32 +86,27 @@ def main():
             print(accs_all)
             print(all_sum)
 
-        sums_all_EC2[num_sampled_hypos] = all_sum
+        sums_all[num_sampled_hypos] = all_sum
 
-        utility_all_EC2[num_sampled_hypos] = accs_all
+        utility_all[num_sampled_hypos] = accs_all
         
-        utility_progress_EC2[num_sampled_hypos] = acc_in_progress
+        utility_progress[num_sampled_hypos] = acc_in_progress
        
-        numtest_progress_EC2[num_sampled_hypos] = num_in_progress
+        numtest_progress[num_sampled_hypos] = num_in_progress
         
-        norm_progress_EC2[num_sampled_hypos] = norm_in_progress
+        norm_progress[num_sampled_hypos] = norm_in_progress
     
-        total_accuracy_progress_EC2[num_sampled_hypos] = total_in_progress
+        total_accuracy_progress[num_sampled_hypos] = total_in_progress
 
-    import pickle
-    to_save = [total_accuracy_progress_EC2, 
-               norm_progress_EC2,
-               utility_progress_EC2, 
-               numtest_progress_EC2, 
-               sums_all_EC2,  
-               utility_all_EC2]
-    f = open("total_dics_EC2_"+dataset+".pkl", "wb")
+    to_save = [total_accuracy_progress, 
+               norm_progress,
+               utility_progress, 
+               numtest_progress, 
+               sums_all,  
+               utility_all]
+    f = open("total_dics_"+criterion+"_"+dataset+".pkl", "wb")
     pickle.dump(to_save,f)
     f.close()
-    
-
-
-
 
 if __name__=="__main__":
     main()
