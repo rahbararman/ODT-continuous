@@ -169,7 +169,7 @@ def calculate_total_accuracy(thetas, thresholds, data, priors, metric='accuracy'
 
 def estimate_priors_and_theta(dataset, rand_state):
     if dataset == '20newsgroup':
-        vectorizer = TfidfVectorizer(stop_words='english',max_features=100)
+        vectorizer = TfidfVectorizer(stop_words='english',max_features=30)
         newsgroups = fetch_20newsgroups(subset='all')
         X = vectorizer.fit_transform(newsgroups.data).toarray()
         X = minmax_scale(X)
