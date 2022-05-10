@@ -310,7 +310,7 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
     
     
     #observe the label
-    y = document_label
+    y = int(document_label)
     
     for feature, (thr_ind,value) in observations.items():
         if int(value)==1:
