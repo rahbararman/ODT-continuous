@@ -215,7 +215,6 @@ def estimate_priors_and_theta(dataset, rand_state):
     return params, thetas, np.array(priors), test_csv, data_csv, theta_used_freq
 
 def calculate_expected_theta(thetas, theta_used_freq, label, feature):
-    print('here!!!!!')
     frequencies = theta_used_freq[label, feature,:]
     probs = frequencies/np.sum(frequencies)
     values = np.array([thetas[i][label, feature] for i in range(len(thetas))])
