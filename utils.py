@@ -179,6 +179,15 @@ def estimate_priors_and_theta(dataset, rand_state):
         y_test = pd.DataFrame(y_test, columns=['label'])
         X_test = pd.DataFrame(X_test)
     
+    if dataset == 'diabetes':
+        data = pd.read_csv('pima-indians-diabetes.csv', header=None)
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
+    
+    
     
     data_csv = pd.concat([X_train,y_train], axis=1)
     test_csv = pd.concat([X_test,y_test], axis=1)
