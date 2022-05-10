@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 from discretize import find_best_threshold
 
-from utils import Hypothesis, calculate_expected_cut, calculate_p_feature_xA, calculate_p_y_xA, compute_initial_h_probs, estimate_priors_and_theta, find_inconsistent_hypotheses
+from utils import Hypothesis, calculate_expected_cut, calculate_expected_theta, calculate_p_feature_xA, calculate_p_y_xA, compute_initial_h_probs, estimate_priors_and_theta, find_inconsistent_hypotheses
 epsilon = 1.0
 min_epsilon = 0.01
 decay_rate = 1.0
@@ -176,7 +176,7 @@ def US(theta, priors, observations, document, h_probs, hypothses):
 
 
 
-def decision_tree_learning(thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion): 
+def decision_tree_learning(thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq): 
     '''
     Receives a document and builds a decision tree with the EC2 algorithm.
     Parameters:
@@ -190,6 +190,7 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
     '''
     
     num_features = len(document.keys())
+    num_labels = thetas[0].shape[0]
     h_probs = compute_initial_h_probs(thetas, priors, hypothses) #using the naive bayes assumption and summing over all class labels
     observations = {}
     G = None
@@ -218,14 +219,14 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
             #update p(h|x_A)
             h_probs = {}
             p_y_xA = calculate_p_y_xA(thetas, priors, observations)
-            sampled_theta = random.choice(thetas)
             for h in hypothses:
                 p_h_y = 1
                 for feature, value in enumerate(h.value):
+                    expected_theta_feature = np.array([calculate_expected_theta(thetas, theta_used_freq, y_i, feature) for y_i in range(num_labels)])
                     if int(value)==1:
-                        p_h_y = p_h_y * sampled_theta[:,feature] 
+                        p_h_y = p_h_y * expected_theta_feature
                     else:
-                        p_h_y = p_h_y * (1-sampled_theta[:,feature])
+                        p_h_y = p_h_y * (1-expected_theta_feature)
 
                 p_xA_y = 1
                 for feature, (thr_ind,value) in observations.items():
@@ -313,20 +314,25 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
     y = int(document_label)
     
     for feature, (thr_ind,value) in observations.items():
+        theta_used_freq[y, feature, thr_ind] = theta_used_freq[y, feature, thr_ind] + 1
         if int(value)==1:
             params[thr_ind][int(y), int(feature), 0] += 1
+            
         else:
             params[thr_ind][int(y), int(feature), 1] += 1
+        
+        
+    
     
     
     return observations, y, y_hat
 
-def sample_hypotheses(N, thetas, priors, random_state, total_samples):
+def sample_hypotheses(N, thetas, priors, random_state, total_samples, theta_used_freq):
     #sampling hypotheses and generating decision regions
     #step1: sample y1,y2,...,yN from priors
     np.random.seed(random_state)
-    sampled_theta = random.choice(thetas)
-    num_features = sampled_theta.shape[1]
+    num_features = thetas[0].shape[1]
+    num_labels = thetas[0].shape[0]
     sampled_ys = []
     for n in range(N):
         y_n = np.random.choice(a = len(priors), p=priors)
@@ -341,7 +347,8 @@ def sample_hypotheses(N, thetas, priors, random_state, total_samples):
         while (True):
             sampled_h = ''
             for f in range(num_features):
-                generated_feature = np.random.choice(a=[0,1], p=[1-sampled_theta[y_n,f],sampled_theta[y_n,f]])
+                expected_theta_ij = calculate_expected_theta(thetas, theta_used_freq, y_n, f)
+                generated_feature = np.random.choice(a=[0,1], p=[1-expected_theta_ij,expected_theta_ij])
                 sampled_h = sampled_h + str(generated_feature)
             #determine region for sampled hypothesis
             #region of h_i = argmax_j p(y_j|h_i) based on theta
@@ -349,10 +356,11 @@ def sample_hypotheses(N, thetas, priors, random_state, total_samples):
             p_h_y = 1
             for feature, value in enumerate(sampled_h):
                 value = int(value)
+                expected_theta_feature = np.array([calculate_expected_theta(thetas, theta_used_freq, y_i, feature) for y_i in range(num_labels)])
                 if value==1:
-                    p_h_y = p_h_y * sampled_theta[:,feature] 
+                    p_h_y = p_h_y * expected_theta_feature
                 else:
-                    p_h_y = p_h_y * (1-sampled_theta[:,feature])
+                    p_h_y = p_h_y * (1-expected_theta_feature)
 
             region = np.argmax(priors*p_h_y)
             if not (sampled_h in observed_hypothses):

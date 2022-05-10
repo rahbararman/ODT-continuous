@@ -27,7 +27,11 @@ def main():
     thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
     min_num_hypotheses = 170
     max_num_hypotheses = 200
+<<<<<<< HEAD
     hypotheses_step = 5
+=======
+    hypotheses_step = 10
+>>>>>>> expectedTheta
 
     sums_all = {}
     utility_all = {}
@@ -46,13 +50,13 @@ def main():
         total_in_progress = [[]]
         for rand_state in random_states:
             print('random state = '+ str(rand_state))
-            params, thetas, priors, test_csv, data_csv = estimate_priors_and_theta(dataset, rand_state=rand_state) 
+            params, thetas, priors, test_csv, data_csv, theta_used_freq = estimate_priors_and_theta(dataset, rand_state=rand_state) 
             if len(acc_in_progress)==1:
                 acc_in_progress = acc_in_progress * len(test_csv)
                 num_in_progress = num_in_progress * len(test_csv)
                 norm_in_progress = norm_in_progress * len(test_csv)
                 total_in_progress = total_in_progress * len(test_csv)
-            hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos)
+            hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
             print('sampled')
             accs = []
             print('Experimenting with ' + criterion)
@@ -63,10 +67,14 @@ def main():
                 y_true = []
                 sum_queries = 0 
                 for i in range(len(test_csv)):
+<<<<<<< HEAD
                     if i%10 == 0:
+=======
+                    if i%100 == 0:
+>>>>>>> expectedTheta
                         print(i)
                     doc = test_csv.iloc[i].to_dict()
-                    obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion)
+                    obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
                     sum_queries+=len(obs.items())
                     y_true.append(y)
                     y_pred.append(y_hat)
@@ -76,8 +84,8 @@ def main():
                     thetas = []
                     for i in range(9):
                         thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
-                    total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, metric='accuracy'))
-                    hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos)
+                    total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric='accuracy'))
+                    hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
                 accs.append(accuracy_score(y_true, y_pred))
             all_sum.append(sum_queries)
             accs_all.append(accs)

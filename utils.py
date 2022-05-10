@@ -136,27 +136,29 @@ def calculate_expected_cut(feature,p_feature_xA, p_not_feature_xA, G, hypotheses
     expected_cut = p_feature_xA * sum_weights_feature + p_not_feature_xA *sum_weights_not_feature
     return expected_cut
 
-def calculate_total_accuracy(thetas, thresholds, data, priors, metric='accuracy'):
+def calculate_total_accuracy(thetas, thresholds, data, priors, theta_used_freq, metric='accuracy'):
     y_pred = []
     y_true = []
     
     for i in range(len(data)):
-        sampled_theta_ind = random.choice(range(len(thetas)))
+        # sampled_theta_ind = random.choice(range(len(thetas)))
         doc = data.iloc[i].to_dict()
         document_label = doc.pop('label', None)
         p_ob_y = 1
         for feature, value in doc.items():
             feature = int(float(feature))
-            if value > thresholds[sampled_theta_ind]:
+            freqs_sum = np.sum(theta_used_freq, axis=0)
+            thr_ind = np.argmax(freqs_sum[feature])
+            if value > thresholds[thr_ind]:
                 value = 1
             else:
                 value = 0
             value = int(float(value))
 
             if value == 1:
-                p_ob_y = p_ob_y * thetas[sampled_theta_ind][:,int(feature)]
+                p_ob_y = p_ob_y * thetas[thr_ind][:,int(feature)]
             else:
-                p_ob_y = p_ob_y * (1-thetas[sampled_theta_ind][:,int(feature)])
+                p_ob_y = p_ob_y * (1-thetas[thr_ind][:,int(feature)])
         y_pred.append(np.argmax(priors*p_ob_y))
         y_true.append(document_label)
     perf = 0.0
@@ -178,6 +180,14 @@ def estimate_priors_and_theta(dataset, rand_state):
         X_train = pd.DataFrame(X_train)
         y_test = pd.DataFrame(y_test, columns=['label'])
         X_test = pd.DataFrame(X_test)
+
+    if dataset == 'diabetes':
+        data = pd.read_csv('pima-indians-diabetes.csv', header=None)
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
     
     if dataset == 'diabetes':
         data = pd.read_csv('pima-indians-diabetes.csv', header=None)
@@ -207,12 +217,16 @@ def estimate_priors_and_theta(dataset, rand_state):
     priors = []
     for l in possible_ys:
         priors.append(1.0/len(possible_ys))
+
+    theta_used_freq = np.ones((num_classes, num_features, 9))
         
     
-    return params, thetas, np.array(priors), test_csv, data_csv
+    return params, thetas, np.array(priors), test_csv, data_csv, theta_used_freq
 
-
-
-
+def calculate_expected_theta(thetas, theta_used_freq, label, feature):
+    frequencies = theta_used_freq[label, feature,:]
+    probs = frequencies/np.sum(frequencies)
+    values = np.array([thetas[i][label, feature] for i in range(len(thetas))])
+    return (values * probs).sum()
 
 
