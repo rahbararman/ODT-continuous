@@ -27,11 +27,7 @@ def main():
     thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
     min_num_hypotheses = 170
     max_num_hypotheses = 200
-<<<<<<< HEAD
     hypotheses_step = 5
-=======
-    hypotheses_step = 10
->>>>>>> expectedTheta
 
     sums_all = {}
     utility_all = {}
@@ -67,11 +63,7 @@ def main():
                 y_true = []
                 sum_queries = 0 
                 for i in range(len(test_csv)):
-<<<<<<< HEAD
                     if i%10 == 0:
-=======
-                    if i%100 == 0:
->>>>>>> expectedTheta
                         print(i)
                     doc = test_csv.iloc[i].to_dict()
                     obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
