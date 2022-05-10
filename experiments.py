@@ -11,7 +11,7 @@ import pickle
 parser=argparse.ArgumentParser()
 
 parser.add_argument('--rand', default=101)
-parser.add_argument('--dataset', default='20newsgroup')
+parser.add_argument('--dataset', default='diabetes')
 parser.add_argument('--thresholds', default=9)
 parser.add_argument('--criterion', default='EC2')
 
@@ -25,9 +25,9 @@ def main():
     dataset = args.dataset
     criterion = args.criterion
     thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
-    min_num_hypotheses = 1000
-    max_num_hypotheses = 1500
-    hypotheses_step = 100
+    min_num_hypotheses = 100
+    max_num_hypotheses = 150
+    hypotheses_step = 10
 
     sums_all = {}
     utility_all = {}
