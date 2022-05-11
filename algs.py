@@ -1,7 +1,7 @@
 import random
 import networkx as nx
 import numpy as np
-from discretize import find_best_threshold
+from discretize import find_best_threshold_EC2, find_best_threshold_IG, find_best_threshold_US
 
 from utils import Hypothesis, calculate_expected_cut, calculate_expected_theta, calculate_p_feature_xA, calculate_p_y_xA, compute_initial_h_probs, estimate_priors_and_theta, find_inconsistent_hypotheses
 epsilon = 1.0
@@ -40,7 +40,7 @@ def EC2(thresholds,h_probs, document, hypotheses, decision_regions, thetas, prio
         return np.random.choice(list(document.keys())), G
     for feature in document.keys():
         p_y_xA = calculate_p_y_xA(thetas, priors, observations)
-        thr_ind = find_best_threshold(thetas, observations, feature, priors, G, hypotheses, thresholds)
+        thr_ind = find_best_threshold_EC2(thetas, observations, feature, priors, G, hypotheses, thresholds)
         p_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,1))#P(x=1|x_A)
         p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,0))#P(x=0|x_A)
         expected_cut = calculate_expected_cut(feature, p_feature_xA, p_not_feature_xA, G, hypotheses)
@@ -50,9 +50,9 @@ def EC2(thresholds,h_probs, document, hypotheses, decision_regions, thetas, prio
             best_thr_ind = thr_ind
     return best_feature, thresholds[best_thr_ind], best_thr_ind, G
 
-def IG(theta, priors, observations, document, epsilon=0.0):
+def IG(thresholds, thetas, priors, observations, document, epsilon=0.0):
     #step1: compute entropy(y|x_A)
-    p_y_xA = calculate_p_y_xA(theta, priors, observations)
+    p_y_xA = calculate_p_y_xA(thetas, priors, observations)
     temp = p_y_xA * np.log2(p_y_xA)
     entropy_y_xA = -sum(temp)
     
@@ -60,33 +60,36 @@ def IG(theta, priors, observations, document, epsilon=0.0):
     #step2: for all features x compute IG(x)
     best_feature = None
     max_IG = float('-inf')
+    best_thr_ind = 0
     rand_number = random.uniform(0,1)
     if rand_number <= epsilon:
         return np.random.choice(list(document.keys()))
     for feature in document.keys():
         #a. compute entropy(y|x_A,feature=1)
-        new_observations = {feature:1}
+        thr_ind = find_best_threshold_IG(thetas, observations, feature, priors, thresholds, p_y_xA, entropy_y_xA)
+        new_observations = {feature:(thr_ind,1)}
         new_observations.update(observations)
-        p_y_xA_feature = calculate_p_y_xA(theta, priors, new_observations)
+        p_y_xA_feature = calculate_p_y_xA(thetas, priors, new_observations)
         temp = p_y_xA_feature * np.log2(p_y_xA_feature)
         entropy_y_xA_feature = -sum(temp)
         #b. compute entropy(y|x_A,feature=0)
-        new_observations = {feature:0}
+        new_observations = {feature:(thr_ind,0)}
         new_observations.update(observations)
-        p_y_xA_not_feature = calculate_p_y_xA(theta, priors, new_observations)
+        p_y_xA_not_feature = calculate_p_y_xA(thetas, priors, new_observations)
         temp = p_y_xA_not_feature * np.log2(p_y_xA_not_feature)
         entropy_y_xA_not_feature = -sum(temp)
         #c. compute expected IG(feature)
-        p_feature_xA =  calculate_p_feature_xA(feature, theta, p_y_xA, 1)#P(x=1|x_A)
-        p_not_feature_xA =  calculate_p_feature_xA(feature, theta, p_y_xA, 0)#P(x=0|x_A)
+        p_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind, 1))#P(x=1|x_A)
+        p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind, 0))#P(x=0|x_A)
         
         expected_IG = p_feature_xA*(entropy_y_xA-entropy_y_xA_feature)+p_not_feature_xA*(entropy_y_xA-entropy_y_xA_not_feature)
         if (expected_IG > max_IG):
             max_IG = expected_IG
             best_feature = feature
-    return best_feature
+            best_thr_ind = thr_ind
+    return best_feature, thresholds[best_thr_ind], best_thr_ind
 
-def US(theta, priors, observations, document, h_probs, hypothses):
+def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_probs, hypothses):
     #step1: compute entropy(H|x_A)
     p_h_xA = np.array(list(h_probs.values()))
     temp = p_h_xA * np.log2(p_h_xA)
@@ -95,26 +98,29 @@ def US(theta, priors, observations, document, h_probs, hypothses):
     #step2: for all features x compute US(x)
     best_feature = None
     max_US = float('-inf')
+    best_thr_ind = 0
     for feature in document.keys():
+        thr_ind = find_best_threshold_US(thetas, observations, feature, priors, thresholds, hypothses, theta_used_freq, entropy_h_xA)
         #a. compute entropy(h|x_A, feature=1)
-        new_observations = {feature:1}
+        new_observations = {feature:(thr_ind,1)}
         new_observations.update(observations)
         h_probs = {}
-        p_y_xA = calculate_p_y_xA(theta, priors, new_observations)
+        p_y_xA = calculate_p_y_xA(thetas, priors, new_observations)
         for h in hypothses:
             p_h_y = 1
             for feature_v, value in enumerate(h.value):
+                expected_theta_feature_v = np.array([calculate_expected_theta(thetas, theta_used_freq, y_i, feature_v) for y_i in range(len(priors))])
                 if int(value)==1:
-                    p_h_y = p_h_y * theta[:,feature_v] 
+                    p_h_y = p_h_y * expected_theta_feature_v
                 else:
-                    p_h_y = p_h_y * (1-theta[:,feature_v])
+                    p_h_y = p_h_y * (1-expected_theta_feature_v)
 
             p_xA_y = 1
-            for feature_v, value in new_observations.items():
+            for feature_v, (thr_ind,value) in new_observations.items():
                 if int(value)==1:
-                    p_xA_y = p_xA_y * theta[:,int(feature_v)] 
+                    p_xA_y = p_xA_y * thetas[thr_ind][:,int(feature_v)] 
                 else:
-                    p_xA_y = p_xA_y * (1-theta[:,int(feature_v)])
+                    p_xA_y = p_xA_y * (1-thetas[thr_ind][:,int(feature_v)])
 
             p_h_xA_y = p_h_y/p_xA_y
 
@@ -130,24 +136,25 @@ def US(theta, priors, observations, document, h_probs, hypothses):
         
         
         #a. compute entropy(h|x_A, feature=0)
-        new_observations = {feature:0}
+        new_observations = {feature:(thr_ind,0)}
         new_observations.update(observations)
         h_probs = {}
-        p_y_xA = calculate_p_y_xA(theta, priors, new_observations)
+        p_y_xA = calculate_p_y_xA(thetas, priors, new_observations)
         for h in hypothses:
             p_h_y = 1
             for feature_v, value in enumerate(h.value):
+                expected_theta_feature_v = np.array([calculate_expected_theta(thetas, theta_used_freq, y_i, feature_v) for y_i in range(len(priors))])
                 if int(value)==1:
-                    p_h_y = p_h_y * theta[:,feature_v] 
+                    p_h_y = p_h_y * expected_theta_feature_v 
                 else:
-                    p_h_y = p_h_y * (1-theta[:,feature_v])
+                    p_h_y = p_h_y * (1-expected_theta_feature_v)
 
             p_xA_y = 1
-            for feature_v, value in new_observations.items():
+            for feature_v, (thr_ind,value) in new_observations.items():
                 if int(value)==1:
-                    p_xA_y = p_xA_y * theta[:,int(feature_v)] 
+                    p_xA_y = p_xA_y * thetas[thr_ind][:,int(feature_v)] 
                 else:
-                    p_xA_y = p_xA_y * (1-theta[:,int(feature_v)])
+                    p_xA_y = p_xA_y * (1-thetas[thr_ind][:,int(feature_v)])
 
             p_h_xA_y = p_h_y/p_xA_y
 
@@ -163,16 +170,17 @@ def US(theta, priors, observations, document, h_probs, hypothses):
         
         
         #c. compute expected US(feature)
-        p_y_xA = calculate_p_y_xA(theta, priors, observations)
-        p_feature_xA =  calculate_p_feature_xA(feature, theta, p_y_xA, 1)#P(x=1|x_A)
-        p_not_feature_xA =  calculate_p_feature_xA(feature, theta, p_y_xA, 0)#P(x=0|x_A)
+        p_y_xA = calculate_p_y_xA(thetas, priors, observations)
+        p_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,1))#P(x=1|x_A)
+        p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,0))#P(x=0|x_A)
         
         expected_US = p_feature_xA*(entropy_h_xA-entropy_h_xA_feature)+p_not_feature_xA*(entropy_h_xA-entropy_h_xA_not_feature)
         if expected_US > max_US:
             max_US = expected_US
             best_feature = feature
+            best_thr_ind = thr_ind
             
-    return best_feature
+    return best_feature, thresholds[best_thr_ind], best_thr_ind
 
 
 
@@ -256,10 +264,14 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
                 break
         if ("IG" in criterion):
             if (criterion == "IG_epsgreedy"):
-                feature_to_be_queried = IG(theta, priors, observations, document, epsilon)
+                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, epsilon)
             else:
-                feature_to_be_queried = IG(theta, priors, observations, document, 0.0)
+                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, 0.0)
             feature_value = document[feature_to_be_queried]
+            if feature_value > thr:
+                feature_value = 1
+            else:
+                feature_value = 0
             feature_value = int(float(feature_value))
             inconsistent_hypotheses = find_inconsistent_hypotheses(feature_to_be_queried, hypothses,feature_value)
             for inconsistenthypo in inconsistent_hypotheses:
@@ -272,13 +284,17 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
                 if hypo.decision_region != re:
                     one_region = False
                     break  
-            observations[feature_to_be_queried] = int(float(feature_value))
+            observations[feature_to_be_queried] = (thr_ind,(int(float(feature_value))))
             del document[feature_to_be_queried]
             if one_region:
                 break
         if (criterion == 'US'):
-            feature_to_be_queried = US(theta, priors, observations, document, h_probs, hypothses)
+            feature_to_be_queried, thr, thr_ind = US(theta_used_freq, thresholds, thetas, priors, observations, document, h_probs, hypothses)
             feature_value = document[feature_to_be_queried]
+            if feature_value > thr:
+                feature_value = 1
+            else:
+                feature_value = 0
             feature_value = int(float(feature_value))
             inconsistent_hypotheses = find_inconsistent_hypotheses(feature_to_be_queried, hypothses,feature_value)
             for inconsistenthypo in inconsistent_hypotheses:
@@ -291,7 +307,7 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
                 if hypo.decision_region != re:
                     one_region = False
                     break  
-            observations[feature_to_be_queried] = int(float(feature_value))
+            observations[feature_to_be_queried] = (thr_ind,(int(float(feature_value))))
             del document[feature_to_be_queried]
             if one_region:
                 break
