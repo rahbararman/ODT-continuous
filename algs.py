@@ -332,15 +332,10 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
     for feature, (thr_ind,value) in observations.items():
         theta_used_freq[y, feature, thr_ind] = theta_used_freq[y, feature, thr_ind] + 1
         if int(value)==1:
-            params[thr_ind][int(y), int(feature), 0] += 1
-            
+            params[thr_ind][int(y), int(feature), 0] += 1    
         else:
             params[thr_ind][int(y), int(feature), 1] += 1
         
-        
-    
-    
-    
     return observations, y, y_hat
 
 def sample_hypotheses(N, thetas, priors, random_state, total_samples, theta_used_freq):
