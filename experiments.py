@@ -25,7 +25,7 @@ def main():
     dataset = args.dataset
     criterion = args.criterion
     thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
-    min_num_hypotheses = 220
+    min_num_hypotheses = 230
     max_num_hypotheses = 250
     hypotheses_step = 10
 

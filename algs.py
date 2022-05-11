@@ -217,7 +217,7 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
                 feature_value = 0
             feature_value = int(float(feature_value))
             observations[feature_to_be_queried] = (thr_ind,(int(float(feature_value))))
-
+            del document[feature_to_be_queried]
             
             #remove inconsistent hypotheses
             inconsistent_hypotheses = find_inconsistent_hypotheses(feature_to_be_queried, hypothses,feature_value)
