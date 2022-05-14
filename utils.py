@@ -222,3 +222,27 @@ def calculate_expected_theta(thetas, theta_used_freq, label, feature):
     return (values * probs).sum()
 
 
+def create_dataset_for_efdt(dataset, rand_state):
+    if dataset == '20newsgroup':
+        vectorizer = TfidfVectorizer(stop_words='english',max_features=30)
+        newsgroups = fetch_20newsgroups(subset='all')
+        X = vectorizer.fit_transform(newsgroups.data).toarray()
+        X = minmax_scale(X)
+        X_train, X_test, y_train, y_test = train_test_split(X, newsgroups.target,test_size=0.3, random_state=rand_state)
+        y_train = pd.DataFrame(y_train, columns=['label'])
+        X_train = pd.DataFrame(X_train)
+        y_test = pd.DataFrame(y_test, columns=['label'])
+        X_test = pd.DataFrame(X_test)
+
+    if dataset == 'diabetes':
+        data = pd.read_csv('pima-indians-diabetes.csv', header=None)
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
+
+    return X_train.to_numpy(), X_test.to_numpy(), y_train.to_numpy(), y_test.to_numpy()
+
+
+

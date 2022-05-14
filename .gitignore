@@ -3,3 +3,5 @@ __pycache__/
 .DS_Store
 .vscode/
 test.ipynb
+test-efdf.py
+efdt_test_utility_diabetes.pkl
