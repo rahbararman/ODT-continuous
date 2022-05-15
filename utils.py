@@ -246,3 +246,8 @@ def create_dataset_for_efdt(dataset, rand_state):
 
 
 
+def calculate_performance(y_true, y_pred, metric='accuracy'):
+    if metric=="accuracy":
+        return accuracy_score(y_true, y_pred)
+    if metric=="fscore":
+        return f1_score(y_true, y_pred, average='weighted')

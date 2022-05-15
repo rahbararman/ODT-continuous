@@ -7,7 +7,7 @@ from algs import decision_tree_learning, sample_hypotheses
 from skmultiflow.trees import ExtremelyFastDecisionTreeClassifier
 import matplotlib.pyplot as plt
 
-from utils import calculate_total_accuracy, create_dataset_for_efdt, estimate_priors_and_theta
+from utils import calculate_performance, calculate_total_accuracy, create_dataset_for_efdt, estimate_priors_and_theta
 import pickle
 #parse arguments
 parser=argparse.ArgumentParser()
@@ -17,16 +17,20 @@ parser.add_argument('--dataset', default='diabetes')
 parser.add_argument('--alg', default='ufodt')
 parser.add_argument('--thresholds', default=9)
 parser.add_argument('--criterion', default='EC2')
+parser.add_argument('--metric', default='accuracy')
+parser.add_argument('--num_rands', default=5)
 
 args=parser.parse_args()
 
 
 
 def main():
-    random_states = list(range(int(args.rand), int(args.rand)+5))
+    num_rands = int(args.num_rands)
+    random_states = list(range(int(args.rand), int(args.rand)+num_rands))
     
     dataset = args.dataset
     alg = args.alg
+    metric = args.metric
 
     if (alg == 'ufodt'):
         criterion = args.criterion
@@ -69,22 +73,23 @@ def main():
                     y_true = []
                     sum_queries = 0 
                     for i in range(len(test_csv)):
-                        if i%100 == 0:
+                        if i%10 == 0:
                             print(i)
                         doc = test_csv.iloc[i].to_dict()
                         obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
                         sum_queries+=len(obs.items())
                         y_true.append(y)
                         y_pred.append(y_hat)
-                        acc_in_progress[i].append(accuracy_score(y_true, y_pred))
+                        acc_in_progress[i].append(calculate_performance(y_true=y_true, y_pred=y_pred, metric=metric))
                         num_in_progress[i].append(len(obs.items()))
                         
                         thetas = []
                         for i in range(9):
                             thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
-                        total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric='accuracy'))
+                        total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric=metric))
                         hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
-                    accs.append(accuracy_score(y_true, y_pred))
+                    accs.append(calculate_performance(y_true=y_true, y_pred=y_pred, metric=metric))
+
                 all_sum.append(sum_queries)
                 accs_all.append(accs)
                 print('all accuracies so far:')
@@ -122,9 +127,10 @@ def main():
             for i in range(len(X_test)):
                 X, y = X_test[i,:].reshape(1,-1), [y_test[i]]
                 efdt.partial_fit(X, y)
-                test_acc_in_progress.append(accuracy_score(y_train, efdt.predict(X_train)))
+                test_perf = calculate_performance(y_true=y_train, y_pred=efdt.predict(X_train), metric=metric)
+                test_acc_in_progress.append(test_perf)
                 
-            total_acc_all.append(test_acc_in_progress)    
+            total_acc_all.append(test_acc_in_progress)  
         
         to_save = np.array(total_acc_all)
         print(to_save.shape)
@@ -132,7 +138,6 @@ def main():
         f = open("efdt_test_utility_"+dataset+".pkl","wb")
         pickle.dump(to_save,f)
         f.close()
-
 
 if __name__=="__main__":
     main()
