@@ -14,18 +14,21 @@ parser=argparse.ArgumentParser()
 
 parser.add_argument('--rand', default=101)
 parser.add_argument('--dataset', default='diabetes')
+parser.add_argument('--minhypo', default=90)
+parser.add_argument('--maxhypo', default=250)
+parser.add_argument('--hypostep', default=10)
 parser.add_argument('--alg', default='ufodt')
 parser.add_argument('--thresholds', default=9)
 parser.add_argument('--criterion', default='EC2')
 parser.add_argument('--metric', default='accuracy')
-parser.add_argument('--num_rands', default=5)
+parser.add_argument('--numrands', default=5)
 
 args=parser.parse_args()
 
 
 
 def main():
-    num_rands = int(args.num_rands)
+    num_rands = int(args.numrands)
     random_states = list(range(int(args.rand), int(args.rand)+num_rands))
     
     dataset = args.dataset
@@ -35,9 +38,9 @@ def main():
     if (alg == 'ufodt'):
         criterion = args.criterion
         thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
-        min_num_hypotheses = 90
-        max_num_hypotheses = 250
-        hypotheses_step = 10
+        min_num_hypotheses = int(args.minhypo)
+        max_num_hypotheses = int(args.maxhypo)
+        hypotheses_step = int(args.hypostep)
 
         sums_all = {}
         utility_all = {}
