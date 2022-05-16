@@ -7,7 +7,7 @@ from sklearn.datasets import fetch_20newsgroups
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import minmax_scale
+from sklearn.preprocessing import LabelEncoder, minmax_scale
 class Hypothesis:
     def __init__(self, value, is_active=True, decision_region=None):
         self.value = value
@@ -190,13 +190,36 @@ def estimate_priors_and_theta(dataset, rand_state):
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
     
     if dataset == 'glass':
-        pass
+        data = pd.read_csv('glass.csv')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
 
     if dataset == 'breastcancer':
-        pass
+        data = pd.read_csv('breast-cancer.csv')
+        data.drop('id', inplace=True, axis=1)
+        data.columns = ['label'] + list(range(len(data.columns)-1)) 
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, 1:] = minmax_scale(np_from_data[:, 1:])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,1:], data_new['label'], test_size=0.8, random_state=rand_state)
 
     if dataset == 'frog':
-        pass
+        data = pd.read_csv('Frogs_MFCCs.csv')
+        data.drop(['Family', 'Genus', 'RecordID'], inplace=True, axis=1)
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
     
     
     
@@ -252,13 +275,36 @@ def create_dataset_for_efdt(dataset, rand_state):
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
 
     if dataset == 'glass':
-        pass
+        data = pd.read_csv('glass.csv')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
 
     if dataset == 'breastcancer':
-        pass
+        data = pd.read_csv('breast-cancer.csv')
+        data.drop('id', inplace=True, axis=1)
+        data.columns = ['label'] + list(range(len(data.columns)-1)) 
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, 1:] = minmax_scale(np_from_data[:, 1:])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,1:], data_new['label'], test_size=0.8, random_state=rand_state)
 
     if dataset == 'frog':
-        pass
+        data = pd.read_csv('Frogs_MFCCs.csv')
+        data.drop(['Family', 'Genus', 'RecordID'], inplace=True, axis=1)
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
 
 
     return X_train.to_numpy(), X_test.to_numpy(), y_train.to_numpy(), y_test.to_numpy()
