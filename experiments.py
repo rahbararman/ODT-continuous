@@ -122,9 +122,9 @@ def main():
         f.close()
     
     if (alg == 'efdt'):
-        efdt = ExtremelyFastDecisionTreeClassifier()
         total_acc_all = []
         for rand_state in random_states:
+            efdt = ExtremelyFastDecisionTreeClassifier(min_samples_reevaluate=1, grace_period=1, leaf_prediction='nb', split_confidence=0.001)
             X_train, X_test, y_train, y_test = create_dataset_for_efdt(dataset, rand_state)
             test_acc_in_progress = []
             for i in range(len(X_test)):
