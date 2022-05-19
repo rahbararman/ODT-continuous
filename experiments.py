@@ -128,6 +128,7 @@ def main():
             X_train, X_test, y_train, y_test = create_dataset_for_efdt(dataset, rand_state)
             test_acc_in_progress = []
             for i in range(len(X_test)):
+                print(i)
                 X, y = X_test[i,:].reshape(1,-1), [y_test[i]]
                 efdt.partial_fit(X, y)
                 test_perf = calculate_performance(y_true=y_train, y_pred=efdt.predict(X_train), metric=metric)
