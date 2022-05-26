@@ -76,7 +76,7 @@ def main():
                     y_true = []
                     sum_queries = 0 
                     for i in range(len(test_csv)):
-                        if i%10 == 0:
+                        if i%1 == 0:
                             print(i)
                         doc = test_csv.iloc[i].to_dict()
                         obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)

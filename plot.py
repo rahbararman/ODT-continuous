@@ -16,7 +16,7 @@ def init_plotting():
     # plt.rcParams['font.family'] = 'Times New Roman'
     plt.rcParams["figure.figsize"] = [20, 16]
     plt.rcParams['pdf.fonttype'] = 42
-    plt.rcParams['font.size'] = 22
+    plt.rcParams['font.size'] = 37
     plt.rcParams['axes.labelsize'] = 1.8 * plt.rcParams['font.size']
     plt.rcParams['axes.titlesize'] = 1.8 * plt.rcParams['font.size']
     plt.rcParams['legend.fontsize'] = 1.1 * plt.rcParams['font.size']
@@ -104,14 +104,18 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
+            if dataset == 'fetal':
+                num_rand=2
+            else:
+                num_rand=3
             if (not alg == 'efdt'):
                 to_plot_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
-                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
+                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
             else:
                 to_plot_array = results[dataset][alg]['test_perf']
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg], color=colors[alg])
-                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
+                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
         plt.legend()
         plt.savefig('Results/TestUtility_in_progress_num_hypo_'+str(num_hypo_in_plot)+'_'+dataset+'.pdf', format='pdf')
 
@@ -124,10 +128,14 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Cost')
         for alg in results[dataset].keys():
+            if dataset == 'fetal':
+                num_rand=2
+            else:
+                num_rand=3
             if (not alg == 'efdt'):
                 to_plot_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
-                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
+                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
             else:
                 to_plot_array = [test_csv.shape[1]-1]*len(results[dataset][alg]['test_perf'][0])
                 plt.plot(to_plot_array,linestyle='-', label=labels[alg], color=colors[alg])
@@ -185,6 +193,10 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Train utility')
         for alg in results[dataset].keys():
+            if dataset == 'fetal':
+                num_rand=2
+            else:
+                num_rand=3
             if (not alg == 'efdt'):
                 to_plot_array = np.array(results[dataset][alg]['utility_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg])

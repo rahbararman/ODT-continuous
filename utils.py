@@ -223,6 +223,18 @@ def estimate_priors_and_theta(dataset, rand_state):
         np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
+
+    if dataset== 'fetal':
+        data = pd.read_csv('fetal_health.csv')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
+
     
     
     
@@ -311,6 +323,17 @@ def create_dataset_for_efdt(dataset, rand_state):
         np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.8, random_state=rand_state)
+    
+    if dataset== 'fetal':
+        data = pd.read_csv('fetal_health.csv')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        encoder = LabelEncoder()
+        encoder.fit(data['label'])
+        data['label'] = encoder.transform(data['label'])
+        np_from_data = data.to_numpy()
+        np_from_data[:, :-1] = minmax_scale(np_from_data[:, :-1])
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
 
 
     return X_train.to_numpy(), X_test.to_numpy(), y_train.to_numpy(), y_test.to_numpy()
