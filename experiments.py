@@ -20,7 +20,7 @@ parser.add_argument('--hypostep', default=10)
 parser.add_argument('--alg', default='ufodt')
 parser.add_argument('--thresholds', default=9)
 parser.add_argument('--criterion', default='EC2')
-parser.add_argument('--metric', default='accuracy')
+parser.add_argument('--metric', default='fscore')
 parser.add_argument('--numrands', default=5)
 
 args=parser.parse_args()

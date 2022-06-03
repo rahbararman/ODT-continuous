@@ -87,7 +87,6 @@ for file in pklfiles:
             results[dataset][criterion]['utility_all'] = utility_all
 
 
-num_rand = 3
 # colors = {'EC2':'r', 'IG':'b', 'efdt':'g'}
 labels = {
     'EC2':r"UFODT-$EC^2$",
@@ -104,16 +103,14 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
-            if dataset == 'fetal':
-                num_rand=2
-            else:
-                num_rand=3
             if (not alg == 'efdt'):
+                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
             else:
                 to_plot_array = results[dataset][alg]['test_perf']
+                num_rand = to_plot_array.shape[0]
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
         plt.legend()
@@ -128,11 +125,8 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Cost')
         for alg in results[dataset].keys():
-            if dataset == 'fetal':
-                num_rand=2
-            else:
-                num_rand=3
             if (not alg == 'efdt'):
+                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
@@ -154,6 +148,7 @@ for dataset in results.keys():
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
             if (not alg == 'efdt'):
+                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_test_utility_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0])
                 to_plot_cost_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0])
                 cost_util_dic = {}
@@ -177,7 +172,7 @@ for dataset in results.keys():
                 # plt.scatter(to_plot_test_utility_array, to_plot_cost_array, color=colors[alg], label=labels[alg])
             else:
                 to_plot_array = results[dataset][alg]['test_perf'].reshape(1, -1)[0]
-                
+                num_rand = to_plot_array.shape[0]
                 plt.scatter(test_csv.shape[1]-1, np.mean(to_plot_array), color=colors[alg], label=labels[alg])
                 plt.errorbar(test_csv.shape[1]-1, np.mean(to_plot_array), yerr=np.std(to_plot_array), fmt="o", color=colors[alg])
                 
@@ -193,11 +188,8 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Train utility')
         for alg in results[dataset].keys():
-            if dataset == 'fetal':
-                num_rand=2
-            else:
-                num_rand=3
             if (not alg == 'efdt'):
+                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['utility_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
@@ -215,6 +207,7 @@ for dataset in results.keys():
     plt.ylabel('cost')
     for alg in results[dataset].keys():
         if not alg == "efdt":
+            num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
             numtests_mean = [np.mean(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
             numtests_std = [np.std(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
             num_samples = list(results[dataset][alg]['sums_all'].keys())
@@ -239,6 +232,7 @@ for dataset in results.keys():
     plt.ylabel('utility')
     for alg in results[dataset].keys():
         if not alg == "efdt":
+            num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
             for k in results[dataset][alg]['utility_all'].keys():
                 results[dataset][alg]['utility_all'][k] = [x[0] for x in results[dataset][alg]['utility_all'][k]]
             utility_mean = [np.mean(np.array(x)) for x in results[dataset][alg]['utility_all'].values()]
