@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, minmax_scale
+
 class Hypothesis:
     def __init__(self, value, is_active=True, decision_region=None):
         self.value = value
