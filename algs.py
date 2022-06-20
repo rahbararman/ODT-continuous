@@ -2,6 +2,7 @@ import random
 import networkx as nx
 import numpy as np
 from discretize import find_best_threshold_EC2, find_best_threshold_IG, find_best_threshold_US
+from feature_selection.OFS import initialize_ofs, select_features_session
 
 from utils import Hypothesis, calculate_expected_cut, calculate_expected_theta, calculate_p_feature_xA, calculate_p_y_xA, compute_initial_h_probs, estimate_priors_and_theta, find_inconsistent_hypotheses
 epsilon = 1.0
@@ -184,7 +185,7 @@ def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_pro
 
 
 
-def decision_tree_learning(thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq): 
+def decision_tree_learning(x_ofs,stepsize_ofs, R_ofs, eps_ofs,num_features_ofs,thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq): 
     '''
     Receives a document and builds a decision tree with the EC2 algorithm.
     Parameters:
@@ -198,11 +199,23 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
     '''
     
     num_features = len(document.keys())
+    document_label = document.pop('label', None)
+    #Online feature selection
+    totol_num_features_ofs = num_features
+    selected_features_ofs, weights_ofs, y_pred_ofs, num_mistakes_ofs = initialize_ofs(num_features_ofs, totol_num_features_ofs)
+
+    rand_number_ofs = random.uniform(0,1)
+    if rand_number_ofs < eps_ofs:
+        selected_features_ofs = np.random.choice(totol_num_features_ofs, replace=False, size=num_features_ofs)      
+    else:
+        selected_features_ofs = np.nonzero(weights_ofs)[0]
+    y_ofs = int(document_label)
+    features_selected_ofs, is_wrong_ofs, weights_ofs = select_features_session(R_ofs, num_features_ofs, eps_ofs, stepsize_ofs, totol_num_features_ofs, selected_features_ofs, weights_ofs, y_pred_ofs, x_ofs, y_ofs)
+
     num_labels = thetas[0].shape[0]
     h_probs = compute_initial_h_probs(thetas, priors, hypothses) #using the naive bayes assumption and summing over all class labels
     observations = {}
     G = None
-    document_label = document.pop('label', None)
     for step in range(max_steps):
         if ('EC2' in criterion):
             if (criterion == "EC2_epsgreedy"):
