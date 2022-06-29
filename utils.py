@@ -24,7 +24,7 @@ def binary(num, length):
 
 
 
-def compute_initial_h_probs(thetas, priors, hypothses):
+def compute_initial_h_probs(selected_features_ofs, thetas, priors, hypothses):
     '''
     return a dictionary containing probabilities of each hypothesis (p(h)) with h's as keys
     parameters:
@@ -36,10 +36,11 @@ def compute_initial_h_probs(thetas, priors, hypothses):
     for h in hypothses:
         p_h_y = 1
         for feature, value in enumerate(h.value):
-            if int(float(value))==1:
-                p_h_y = p_h_y * thetas[0][:,feature] 
-            else:
-                p_h_y = p_h_y * (1-thetas[0][:,feature])
+            if feature in selected_features_ofs:
+                if int(float(value))==1:
+                    p_h_y = p_h_y * thetas[0][:,feature] 
+                else:
+                    p_h_y = p_h_y * (1-thetas[0][:,feature])
         
         p_h = sum(priors*p_h_y)
         probs[h.value] = p_h

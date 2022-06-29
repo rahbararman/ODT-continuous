@@ -1,4 +1,5 @@
 import argparse, sys
+from cProfile import label
 import random
 
 import numpy as np
@@ -6,6 +7,7 @@ from sklearn.metrics import accuracy_score
 from algs import decision_tree_learning, sample_hypotheses
 from skmultiflow.trees import ExtremelyFastDecisionTreeClassifier
 import matplotlib.pyplot as plt
+from feature_selection.OFS import initialize_ofs, select_features_session
 
 from utils import calculate_performance, calculate_total_accuracy, create_dataset_for_efdt, estimate_priors_and_theta
 import pickle
@@ -34,6 +36,11 @@ def main():
     dataset = args.dataset
     alg = args.alg
     metric = args.metric
+    #TODO: Hyperparameters for OFS
+    num_features_ofs = 12
+    eps_ofs = 0.1
+    R_ofs = 10
+    stepsize_ofs = 0.2
 
     if (alg == 'ufodt'):
         criterion = args.criterion
@@ -79,7 +86,27 @@ def main():
                         if i%1 == 0:
                             print(i)
                         doc = test_csv.iloc[i].to_dict()
-                        obs, y, y_hat = decision_tree_learning(thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
+                        #Online feature selection
+                        #***********************START**************************
+                        num_features = thetas[0].shape[1]
+                        totol_num_features_ofs = num_features
+                        selected_features_ofs, weights_ofs, y_pred_ofs, num_mistakes_ofs = initialize_ofs(num_features_ofs, totol_num_features_ofs)
+
+                        rand_number_ofs = random.uniform(0,1)
+                        if rand_number_ofs < eps_ofs:
+                            selected_features_ofs = np.random.choice(totol_num_features_ofs, replace=False, size=num_features_ofs)      
+                        else:
+                            selected_features_ofs = np.nonzero(weights_ofs)[0]
+                        
+                        y_ofs = int(doc["label"])
+                        x_ofs = np.array([doc.get(key) for key in list(range(num_features))])
+                        _, _, weights_ofs = select_features_session(R_ofs, num_features_ofs, eps_ofs, stepsize_ofs, totol_num_features_ofs, selected_features_ofs, weights_ofs, y_pred_ofs, x_ofs, y_ofs)
+
+                        for key in doc.keys():
+                            if not (key in selected_features_ofs):
+                                doc.pop(key, None)
+                        #***********************END**************************
+                        obs, y, y_hat = decision_tree_learning(selected_features_ofs,thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
                         sum_queries+=len(obs.items())
                         y_true.append(y)
                         y_pred.append(y_hat)
