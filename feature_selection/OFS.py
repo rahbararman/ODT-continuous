@@ -45,7 +45,7 @@ def initialize_ofs(num_features, totol_num_features):
     weights[selected_features] += 0.01
     y_pred = []
     num_mistakes = 0
-    print("************************************")
+    # print("************************************")
     return totol_num_features,selected_features,weights,y_pred,num_mistakes
 
 def select_features_session(R, num_features, eps, stepsize, totol_num_features, selected_features, weights, y_pred, x, y):

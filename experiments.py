@@ -72,11 +72,21 @@ def main():
                     num_in_progress = num_in_progress * len(test_csv)
                     norm_in_progress = norm_in_progress * len(test_csv)
                     total_in_progress = total_in_progress * len(test_csv)
-                hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
+
+                #Online feature selection
+                #***********************START**************************
+                num_features = thetas[0].shape[1]
+                totol_num_features_ofs = num_features
+                totol_num_features_ofs, selected_features_ofs, weights_ofs, y_pred_ofs, num_mistakes_ofs = initialize_ofs(num_features_ofs, totol_num_features_ofs)
+                selected_features_ofs = np.random.choice(totol_num_features_ofs, replace=False, size=num_features_ofs)
+                #***********************END**************************
+                
+                hypothses, decision_regions = sample_hypotheses(selected_features_ofs=selected_features_ofs, N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
                 print('sampled')
                 accs = []
                 print('Experimenting with ' + criterion)
-                max_steps_values = [test_csv.shape[1]-1]
+                # max_steps_values = [test_csv.shape[1]-1]
+                max_steps_values = [num_features_ofs]
                 print('max steps = '+ str(max_steps_values[0]))  
                 for max_steps in max_steps_values:
                     y_pred = []
@@ -88,10 +98,6 @@ def main():
                         doc = test_csv.iloc[i].to_dict()
                         #Online feature selection
                         #***********************START**************************
-                        num_features = thetas[0].shape[1]
-                        totol_num_features_ofs = num_features
-                        selected_features_ofs, weights_ofs, y_pred_ofs, num_mistakes_ofs = initialize_ofs(num_features_ofs, totol_num_features_ofs)
-
                         rand_number_ofs = random.uniform(0,1)
                         if rand_number_ofs < eps_ofs:
                             selected_features_ofs = np.random.choice(totol_num_features_ofs, replace=False, size=num_features_ofs)      
@@ -101,9 +107,10 @@ def main():
                         y_ofs = int(doc["label"])
                         x_ofs = np.array([doc.get(key) for key in list(range(num_features))])
                         _, _, weights_ofs = select_features_session(R_ofs, num_features_ofs, eps_ofs, stepsize_ofs, totol_num_features_ofs, selected_features_ofs, weights_ofs, y_pred_ofs, x_ofs, y_ofs)
-
-                        for key in doc.keys():
-                            if not (key in selected_features_ofs or key in ["label"]):
+                        
+                        keys_to_check = list(doc.keys())
+                        for key in keys_to_check:
+                            if not (key in list(selected_features_ofs) or key == "label"):
                                 doc.pop(key, None)
                         #***********************END**************************
                         obs, y, y_hat = decision_tree_learning(selected_features_ofs,thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
@@ -117,7 +124,7 @@ def main():
                         for i in range(9):
                             thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
                         total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric=metric))
-                        hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
+                        hypothses, decision_regions = sample_hypotheses(selected_features_ofs=selected_features_ofs,N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
                     accs.append(calculate_performance(y_true=y_true, y_pred=y_pred, metric=metric))
 
                 all_sum.append(sum_queries)
