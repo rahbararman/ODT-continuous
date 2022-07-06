@@ -103,7 +103,7 @@ def main():
                         _, _, weights_ofs = select_features_session(R_ofs, num_features_ofs, eps_ofs, stepsize_ofs, totol_num_features_ofs, selected_features_ofs, weights_ofs, y_pred_ofs, x_ofs, y_ofs)
 
                         for key in doc.keys():
-                            if not (key in selected_features_ofs):
+                            if not (key in selected_features_ofs or key in ["label"]):
                                 doc.pop(key, None)
                         #***********************END**************************
                         obs, y, y_hat = decision_tree_learning(selected_features_ofs,thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
