@@ -37,7 +37,7 @@ def main():
     alg = args.alg
     metric = args.metric
     #TODO: Hyperparameters for OFS
-    num_features_ofs = 12
+    num_features_ofs = 17
     eps_ofs = 0.1
     R_ofs = 10
     stepsize_ofs = 0.2
