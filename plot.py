@@ -35,16 +35,17 @@ def exp_smooth(vals, gamma=.85):
         res.append(tv)
     return res
 
-methods = ['EC2', 'IG', 'US', 'efdt']
-c1, c2, c3, c4 = '#d7191c', '#2b83ba', '#4dac26', '#ed9722'
-cs = [c1, c2, c3, c4]
+methods = ['EC2', 'IG', 'US', 'efdt', 'vfdt']
+c1, c2, c3, c4, c5 = '#d7191c', '#2b83ba', '#4dac26', '#ed9722', '#edd222', 
+cs = [c1, c2, c3, c4, c5]
 colors = {
     methods[0]:c1,
     methods[1]:c2,
     methods[2]:c3,
     'random': '#2F172E',
     'VFDT': c4,
-    methods[3]: '#3f1f51'
+    methods[3]: '#3f1f51',
+    methods[4]: c4
 }
 
 
@@ -65,7 +66,16 @@ for file in pklfiles:
             results[dataset] = {}
             results[dataset]['efdt'] = {}
             results[dataset]['efdt']['test_perf'] = total_acc_all
-    
+    elif 'vfdt' in filewithoutext:
+        _, _, _, dataset = filewithoutext.split('_')
+        total_acc_all = pickle.load(open(file, "rb" ))
+        if dataset in results.keys():
+            results[dataset]['vfdt'] = {}
+            results[dataset]['vfdt']['test_perf'] = total_acc_all
+        else:
+            results[dataset] = {}
+            results[dataset]['vfdt'] = {}
+            results[dataset]['vfdt']['test_perf'] = total_acc_all    
     else:
         _, _, criterion, dataset = filewithoutext.split('_')
         [total_accuracy_progress, norm_progress, utility_progress, numtest_progress, sums_all, utility_all] = pickle.load(open(file, "rb" ))
@@ -92,18 +102,21 @@ labels = {
     'EC2':r"UFODT-$EC^2$",
     'IG': r"UFODT-$IG$",
     'US': r"UFODT-$US$",
-    'efdt': "EFDT"
+    'efdt': "EFDT",
+    'vfdt': "VFDT"
 }
 
 #Plot test utility
+
 for dataset in results.keys():
+    # for dataset in ['fetal']:
     num_hypos = list(results[dataset]['IG']['test_perf'].keys())
     for num_hypo_in_plot in num_hypos:
         plt.clf()
         plt.xlabel('Time step')
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
-            if (not alg == 'efdt'):
+            if (not (alg == 'efdt' or alg=='vfdt')):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
@@ -124,16 +137,19 @@ for dataset in results.keys():
         plt.clf()
         plt.xlabel('Time step')
         plt.ylabel('Cost')
+        efdt_vfdt_plotted = False
         for alg in results[dataset].keys():
-            if (not alg == 'efdt'):
+            if (not (alg == 'efdt' or alg=='vfdt')):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
             else:
-                to_plot_array = [test_csv.shape[1]-1]*len(results[dataset][alg]['test_perf'][0])
-                plt.plot(to_plot_array,linestyle='-', label=labels[alg], color=colors[alg])
-                # plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
+                if not efdt_vfdt_plotted:
+                    efdt_vfdt_plotted = True
+                    to_plot_array = [test_csv.shape[1]-1]*len(results[dataset][alg]['test_perf'][0])
+                    plt.plot(to_plot_array,linestyle='-', label='VFDT/EFDT', color=c4)
+                    # plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
         plt.legend()
         plt.savefig('Results/Cost_in_progress_num_hypo_'+str(num_hypo_in_plot)+'_'+dataset+'.pdf', format='pdf')
 
@@ -147,7 +163,7 @@ for dataset in results.keys():
         plt.xlabel('Cost')
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
-            if (not alg == 'efdt'):
+            if (not (alg == 'efdt' or alg=='vfdt')):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_test_utility_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0])
                 to_plot_cost_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0])
@@ -188,7 +204,7 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Train utility')
         for alg in results[dataset].keys():
-            if (not alg == 'efdt'):
+            if (not (alg == 'efdt' or alg=='vfdt')):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['utility_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg])
@@ -206,7 +222,7 @@ for dataset in results.keys():
     plt.xlabel('number of sampled hypotheses')
     plt.ylabel('cost')
     for alg in results[dataset].keys():
-        if not alg == "efdt":
+        if not (alg == 'efdt' or alg=='vfdt'):
             num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
             numtests_mean = [np.mean(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
             numtests_std = [np.std(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
@@ -231,7 +247,7 @@ for dataset in results.keys():
     plt.xlabel('number of sampled hypotheses')
     plt.ylabel('utility')
     for alg in results[dataset].keys():
-        if not alg == "efdt":
+        if not (alg == 'efdt' or alg=='vfdt'):
             num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
             for k in results[dataset][alg]['utility_all'].keys():
                 results[dataset][alg]['utility_all'][k] = [x[0] for x in results[dataset][alg]['utility_all'][k]]

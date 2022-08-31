@@ -7,8 +7,10 @@ from algs import decision_tree_learning, sample_hypotheses
 from skmultiflow.trees import ExtremelyFastDecisionTreeClassifier
 import matplotlib.pyplot as plt
 
-from utils import calculate_performance, calculate_total_accuracy, create_dataset_for_efdt, estimate_priors_and_theta
+from utils import calculate_performance, calculate_total_accuracy, create_dataset_for_efdt_vfdt, estimate_priors_and_theta
 import pickle
+
+from vfdt import Vfdt
 #parse arguments
 parser=argparse.ArgumentParser()
 
@@ -125,7 +127,7 @@ def main():
         total_acc_all = []
         for rand_state in random_states:
             efdt = ExtremelyFastDecisionTreeClassifier(min_samples_reevaluate=1, grace_period=1, leaf_prediction='nb', split_confidence=0.001)
-            X_train, X_test, y_train, y_test = create_dataset_for_efdt(dataset, rand_state)
+            X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
             test_acc_in_progress = []
             for i in range(len(X_test)):
                 print(i)
@@ -140,6 +142,31 @@ def main():
         print(to_save.shape)
         
         f = open("efdt_test_utility_"+dataset+".pkl","wb")
+        pickle.dump(to_save,f)
+        f.close()
+
+    if (alg == 'vfdt'):
+        print('VFDT')
+        total_acc_all = []
+        for rand_state in random_states:
+            X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
+            title = list(range(X_train.shape[1]))
+            features = title[:-1]
+            vfdt = Vfdt(features=features, nmin=1, delta=0.5, tau=0.2)
+            test_acc_in_progress = []
+            for i in range(len(X_test)):
+                print(i)
+                X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
+                vfdt.update(X,y)
+                test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
+                test_acc_in_progress.append(test_perf)
+                
+            total_acc_all.append(test_acc_in_progress)  
+        
+        to_save = np.array(total_acc_all)
+        print(to_save.shape)
+        
+        f = open("vfdt_test_utility_"+dataset+".pkl","wb")
         pickle.dump(to_save,f)
         f.close()
 

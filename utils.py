@@ -236,7 +236,7 @@ def calculate_expected_theta(thetas, theta_used_freq, label, feature):
     return (values * probs).sum()
 
 
-def create_dataset_for_efdt(dataset, rand_state):
+def create_dataset_for_efdt_vfdt(dataset, rand_state):
 
     if dataset == 'diabetes':
         data = pd.read_csv('pima-indians-diabetes.csv', header=None)
