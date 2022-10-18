@@ -46,7 +46,7 @@ colors = {
     'VFDT': c4,
     methods[3]: '#3f1f51',
     methods[4]: c4,
-    methods[5]: '#74997b',
+    methods[5]: '#F1886D',
     methods[6]: '#63a6bd' 
 }
 
@@ -143,12 +143,12 @@ for dataset in results.keys():
         plt.xlabel('Time step')
         plt.ylabel('Test utility')
         for alg in results[dataset].keys():
-            if (not (alg == 'efdt' or alg=='vfdt')):
+            if (alg == 'EC2' or alg=='IG'):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
-            else:
+            if (alg == 'efdt' or alg=='vfdt'):
                 to_plot_array = results[dataset][alg]['test_perf']
                 num_rand = to_plot_array.shape[0]
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg], color=colors[alg])
@@ -178,12 +178,12 @@ for dataset in results.keys():
         plt.ylabel('Cost')
         efdt_vfdt_plotted = False
         for alg in results[dataset].keys():
-            if (not (alg == 'efdt' or alg=='vfdt')):
+            if (alg == 'EC2' or alg=='IG'):
                 num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
                 to_plot_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
                 plt.plot(exp_smooth(np.mean(to_plot_array, axis=0),0.7),linestyle='-', label=labels[alg], color=colors[alg])
                 plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0)/np.sqrt(num_rand), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0)/np.sqrt(num_rand),alpha=0.2)
-            else:
+            if (alg == 'vfdt' or alg=='efdt'):
                 if not efdt_vfdt_plotted:
                     efdt_vfdt_plotted = True
                     to_plot_array = [test_csv.shape[1]-1]*len(results[dataset][alg]['test_perf'][0])
@@ -203,118 +203,3 @@ for dataset in results.keys():
 
         plt.legend()
         plt.savefig('Results/Cost_in_progress_num_hypo_'+str(num_hypo_in_plot)+'_'+dataset+'.pdf', format='pdf')
-
-
-#plot utility vs cost
-for dataset in results.keys():
-    num_hypos = list(results[dataset]['IG']['numtest_progress'].keys())
-    params, thetas, priors, test_csv, data_csv, theta_used_freq = estimate_priors_and_theta(dataset, rand_state=100)
-    for num_hypo_in_plot in num_hypos:
-        plt.clf()
-        plt.xlabel('Cost')
-        plt.ylabel('Test utility')
-        for alg in results[dataset].keys():
-            if (not (alg == 'efdt' or alg=='vfdt')):
-                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
-                to_plot_test_utility_array = np.array(results[dataset][alg]['test_perf'][num_hypo_in_plot][0])
-                to_plot_cost_array = np.array(results[dataset][alg]['numtest_progress'][num_hypo_in_plot][0])
-                cost_util_dic = {}
-                for (co, util) in zip(to_plot_cost_array, to_plot_test_utility_array):
-                    if co in cost_util_dic:
-                        cost_util_dic[co].append(util)
-                    else:
-                        cost_util_dic[co]=[]
-                        cost_util_dic[co].append(util)
-                    
-                for co in cost_util_dic.keys():
-                    temp = np.array(cost_util_dic[co])
-                    mean = np.mean(temp)
-                    std = np.std(temp)
-                    cost_util_dic[co] = (mean,std)
-                x = cost_util_dic.keys()
-                y = [x[0] for x in cost_util_dic.values()]
-                err = [x[1] for x in cost_util_dic.values()]
-                plt.scatter(x, y, color=colors[alg], label=labels[alg])
-                plt.errorbar(x, y, yerr=err, fmt="o", color=colors[alg])
-                # plt.scatter(to_plot_test_utility_array, to_plot_cost_array, color=colors[alg], label=labels[alg])
-            else:
-                to_plot_array = results[dataset][alg]['test_perf'].reshape(1, -1)[0]
-                num_rand = to_plot_array.shape[0]
-                plt.scatter(test_csv.shape[1]-1, np.mean(to_plot_array), color=colors[alg], label=labels[alg])
-                plt.errorbar(test_csv.shape[1]-1, np.mean(to_plot_array), yerr=np.std(to_plot_array), fmt="o", color=colors[alg])
-                
-        plt.legend()
-        plt.savefig('Results/TestUtility_vs_cost_num_hypo_'+str(num_hypo_in_plot)+'_'+dataset+'.pdf', format='pdf')
-
-
-#plot train utility in prgoress
-for dataset in results.keys():
-    num_hypos = list(results[dataset]['IG']['utility_progress'].keys())
-    for num_hypo_in_plot in num_hypos:
-        plt.clf()
-        plt.xlabel('Time step')
-        plt.ylabel('Train utility')
-        for alg in results[dataset].keys():
-            if (not (alg == 'efdt' or alg=='vfdt')):
-                num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
-                to_plot_array = np.array(results[dataset][alg]['utility_progress'][num_hypo_in_plot][0]).reshape(num_rand,-1)
-                plt.plot(exp_smooth(np.mean(to_plot_array, axis=0), 0.7),linestyle='-', label=labels[alg])
-                plt.fill_between(range(to_plot_array.shape[1]),np.mean(to_plot_array, axis=0)-np.std(to_plot_array, axis=0), np.mean(to_plot_array, axis=0)+np.std(to_plot_array, axis=0),alpha=0.2)
-
-        plt.legend()
-        plt.savefig('Results/TrainUtility_in_progress_num_hypo_'+str(num_hypo_in_plot)+'_'+dataset+'.pdf', format='pdf')
-
-
-#Plot cost
-
-for dataset in results.keys():
-    params, thetas, priors, test_csv, data_csv, theta_used_freq = estimate_priors_and_theta(dataset, rand_state=100)
-    plt.clf()
-    plt.xlabel('number of sampled hypotheses')
-    plt.ylabel('cost')
-    for alg in results[dataset].keys():
-        if not (alg == 'efdt' or alg=='vfdt'):
-            num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
-            numtests_mean = [np.mean(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
-            numtests_std = [np.std(np.array(x)/len(test_csv)) for x in results[dataset][alg]['sums_all'].values()]
-            num_samples = list(results[dataset][alg]['sums_all'].keys())
-            numtests_mean.reverse()
-            numtests_std.reverse()
-            num_samples.reverse()
-            plt.errorbar(num_samples, numtests_mean, yerr=numtests_std,linestyle='-', label=labels[alg])
-
-        
-
-    plt.legend()
-    plt.savefig('Results/label_complexity_online_'+dataset+'.pdf', format='pdf')
-
-
-
-
-#Plot train utility
-for dataset in results.keys():
-    params, thetas, priors, test_csv, data_csv, theta_used_freq = estimate_priors_and_theta(dataset, rand_state=100)
-    plt.clf()
-    plt.xlabel('number of sampled hypotheses')
-    plt.ylabel('utility')
-    for alg in results[dataset].keys():
-        if not (alg == 'efdt' or alg=='vfdt'):
-            num_rand = len(list(results[dataset][alg]['sums_all'].values())[0])
-            for k in results[dataset][alg]['utility_all'].keys():
-                results[dataset][alg]['utility_all'][k] = [x[0] for x in results[dataset][alg]['utility_all'][k]]
-            utility_mean = [np.mean(np.array(x)) for x in results[dataset][alg]['utility_all'].values()]
-            utility_std = [np.std(np.array(x)) for x in results[dataset][alg]['utility_all'].values()]
-            num_samples = list(results[dataset][alg]['utility_all'].keys())
-            utility_mean.reverse()
-            utility_std.reverse()
-            num_samples.reverse()
-            plt.plot(num_samples, utility_mean, linestyle='-', label=labels[alg])
-            plt.fill_between(num_samples, np.array(utility_mean)-np.array(utility_std), np.array(utility_mean)+np.array(utility_std),alpha=0.2)
-    plt.ylim(0.2,0.7)
-    plt.legend()
-    plt.savefig('Results/Utility_online_'+dataset+'.pdf', format='pdf')
-
-
-
-    
-
