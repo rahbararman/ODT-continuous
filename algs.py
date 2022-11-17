@@ -63,7 +63,9 @@ def IG(thresholds, thetas, priors, observations, document, epsilon=0.0):
     best_thr_ind = 0
     rand_number = random.uniform(0,1)
     if rand_number <= epsilon:
-        return np.random.choice(list(document.keys()))
+        best_feature = np.random.choice(list(document.keys()))
+        best_thr_ind = np.random.choice(len(thresholds))
+        return best_feature, thresholds[best_thr_ind], best_thr_ind
     for feature in document.keys():
         #a. compute entropy(y|x_A,feature=1)
         thr_ind = find_best_threshold_IG(thetas, observations, feature, priors, thresholds, p_y_xA, entropy_y_xA)
@@ -264,7 +266,7 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
                 break
         if ("IG" in criterion):
             if (criterion == "IG_epsgreedy"):
-                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, epsilon)
+                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, 1.0)
             else:
                 feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, 0.0)
             feature_value = document[feature_to_be_queried]
