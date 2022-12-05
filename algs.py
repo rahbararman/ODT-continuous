@@ -338,7 +338,7 @@ def decision_tree_learning(selected_features_ofs ,thresholds,params, document, t
             params[thr_ind][int(y), int(feature), 0] += 1    
         else:
             params[thr_ind][int(y), int(feature), 1] += 1
-        
+
     return observations, y, y_hat
 
 def sample_hypotheses(selected_features_ofs, N, thetas, priors, random_state, total_samples, theta_used_freq):
