@@ -24,6 +24,7 @@ parser.add_argument('--thresholds', default=9)
 parser.add_argument('--criterion', default='EC2')
 parser.add_argument('--metric', default='fscore')
 parser.add_argument('--numrands', default=5)
+parser.add_argument('--discretization', default='exhaustive')
 
 args=parser.parse_args()
 
@@ -48,6 +49,7 @@ def main():
         min_num_hypotheses = int(args.minhypo)
         max_num_hypotheses = int(args.maxhypo)
         hypotheses_step = int(args.hypostep)
+
 
         sums_all = {}
         utility_all = {}
@@ -88,6 +90,13 @@ def main():
                 # max_steps_values = [test_csv.shape[1]-1]
                 print("total number of features:")
                 print(num_features)
+                # EXP3 init
+                exhaustive = True
+                S_thresholds = None
+                if args.discretization != 'exhaustive':
+                    exhaustive = False
+                    S_thresholds = np.zeros((num_features, len(thresholds)))
+                
                 max_steps_values = [num_features_ofs]
                 print('max steps = '+ str(max_steps_values[0]))  
                 for max_steps in max_steps_values:
@@ -113,7 +122,7 @@ def main():
                                 doc.pop(key, None)
                         #***********************END**************************
                         
-                        obs, y, y_hat = decision_tree_learning(selected_features_ofs,thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
+                        obs, y, y_hat = decision_tree_learning(exhaustive, S_thresholds, selected_features_ofs, thresholds,params,doc,thetas,max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq)
                         #Online feature selection
                         #***********************START**************************
                         observed_features_ofs = list(obs.keys())

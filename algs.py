@@ -9,7 +9,7 @@ epsilon = 1.0
 min_epsilon = 0.01
 decay_rate = 1.0
 
-def EC2(thresholds,h_probs, document, hypotheses, decision_regions, thetas, priors, observations, G=None, epsilon=0.0):
+def EC2(exhaustive, S_thresholds, thresholds,h_probs, document, hypotheses, decision_regions, thetas, priors, observations, G=None, epsilon=0.0):
 
     '''
     Return the next feature to be queried and the current graph
@@ -41,17 +41,19 @@ def EC2(thresholds,h_probs, document, hypotheses, decision_regions, thetas, prio
         return np.random.choice(list(document.keys())), G
     for feature in document.keys():
         p_y_xA = calculate_p_y_xA(thetas, priors, observations)
-        thr_ind = find_best_threshold_EC2(thetas, observations, feature, priors, G, hypotheses, thresholds)
+        thr_ind, pi = find_best_threshold_EC2(thetas, observations, feature, priors, G, hypotheses, thresholds, S_thresholds, exhaustive=exhaustive)
         p_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,1))#P(x=1|x_A)
         p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,0))#P(x=0|x_A)
         expected_cut = calculate_expected_cut(feature, p_feature_xA, p_not_feature_xA, G, hypotheses)
+        if (not exhaustive):
+            S_thresholds[feature, thr_ind] = S_thresholds[feature, thr_ind] + expected_cut/pi
         if (expected_cut > max_cut):
             max_cut = expected_cut
             best_feature = feature
             best_thr_ind = thr_ind
     return best_feature, thresholds[best_thr_ind], best_thr_ind, G
 
-def IG(thresholds, thetas, priors, observations, document, epsilon=0.0):
+def IG(exhaustive, S_thresholds, thresholds, thetas, priors, observations, document, epsilon=0.0):
     #step1: compute entropy(y|x_A)
     p_y_xA = calculate_p_y_xA(thetas, priors, observations)
     temp = p_y_xA * np.log2(p_y_xA)
@@ -67,7 +69,7 @@ def IG(thresholds, thetas, priors, observations, document, epsilon=0.0):
         return np.random.choice(list(document.keys()))
     for feature in document.keys():
         #a. compute entropy(y|x_A,feature=1)
-        thr_ind = find_best_threshold_IG(thetas, observations, feature, priors, thresholds, p_y_xA, entropy_y_xA)
+        thr_ind, pi = find_best_threshold_IG(thetas, observations, feature, priors, thresholds, p_y_xA, entropy_y_xA, S_thresholds, exhaustive=exhaustive)
         new_observations = {feature:(thr_ind,1)}
         new_observations.update(observations)
         p_y_xA_feature = calculate_p_y_xA(thetas, priors, new_observations)
@@ -84,13 +86,15 @@ def IG(thresholds, thetas, priors, observations, document, epsilon=0.0):
         p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind, 0))#P(x=0|x_A)
         
         expected_IG = p_feature_xA*(entropy_y_xA-entropy_y_xA_feature)+p_not_feature_xA*(entropy_y_xA-entropy_y_xA_not_feature)
+        if (not exhaustive):
+            S_thresholds[feature, thr_ind] = S_thresholds[feature, thr_ind] + expected_IG/pi
         if (expected_IG > max_IG):
             max_IG = expected_IG
             best_feature = feature
             best_thr_ind = thr_ind
     return best_feature, thresholds[best_thr_ind], best_thr_ind
 
-def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_probs, hypothses):
+def US(exhaustive, S_thresholds, theta_used_freq,thresholds, thetas, priors, observations, document, h_probs, hypothses):
     #step1: compute entropy(H|x_A)
     p_h_xA = np.array(list(h_probs.values()))
     temp = p_h_xA * np.log2(p_h_xA)
@@ -101,7 +105,7 @@ def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_pro
     max_US = float('-inf')
     best_thr_ind = 0
     for feature in document.keys():
-        thr_ind = find_best_threshold_US(thetas, observations, feature, priors, thresholds, hypothses, theta_used_freq, entropy_h_xA)
+        thr_ind, pi = find_best_threshold_US(thetas, observations, feature, priors, thresholds, hypothses, theta_used_freq, entropy_h_xA, S_thresholds, exhaustive=exhaustive)
         #a. compute entropy(h|x_A, feature=1)
         new_observations = {feature:(thr_ind,1)}
         new_observations.update(observations)
@@ -176,6 +180,8 @@ def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_pro
         p_not_feature_xA =  calculate_p_feature_xA(feature, thetas, p_y_xA, (thr_ind,0))#P(x=0|x_A)
         
         expected_US = p_feature_xA*(entropy_h_xA-entropy_h_xA_feature)+p_not_feature_xA*(entropy_h_xA-entropy_h_xA_not_feature)
+        if (not exhaustive):
+            S_thresholds[feature, thr_ind] = S_thresholds[feature, thr_ind] + expected_US/pi
         if expected_US > max_US:
             max_US = expected_US
             best_feature = feature
@@ -185,10 +191,11 @@ def US(theta_used_freq,thresholds, thetas, priors, observations, document, h_pro
 
 
 
-def decision_tree_learning(selected_features_ofs ,thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq): 
+def decision_tree_learning(exhaustive, S_thresholds, selected_features_ofs ,thresholds,params, document, thetas, max_steps, priors, hypothses, decision_regions, criterion, theta_used_freq): 
     '''
     Receives a document and builds a decision tree with the EC2 algorithm.
     Parameters:
+        S_thresholds: ndarray of sum of marginal gains for each threshold of each feature
         criterion: the method to choose next feature to be queried
         document: the document to be classified. A dictionary containing feature names as keys and features as values
         thetas: the condictional probabilites. a list of m*n ndarrays where m is the number of decision regions and n is the number of features
@@ -208,9 +215,9 @@ def decision_tree_learning(selected_features_ofs ,thresholds,params, document, t
     for step in range(max_steps):
         if ('EC2' in criterion):
             if (criterion == "EC2_epsgreedy"):
-                feature_to_be_queried, thr, thr_ind, G = EC2(thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, epsilon)
+                feature_to_be_queried, thr, thr_ind, G = EC2(exhaustive, S_thresholds, thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, epsilon)
             else:
-                feature_to_be_queried, thr, thr_ind, G = EC2(thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, 0.0)
+                feature_to_be_queried, thr, thr_ind, G = EC2(exhaustive, S_thresholds, thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, 0.0)
             #query the next feature.
             feature_value = document[feature_to_be_queried]
             if feature_value > thr:
@@ -267,9 +274,9 @@ def decision_tree_learning(selected_features_ofs ,thresholds,params, document, t
                 break
         if ("IG" in criterion):
             if (criterion == "IG_epsgreedy"):
-                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, epsilon)
+                feature_to_be_queried, thr, thr_ind = IG(exhaustive, S_thresholds, thresholds, thetas, priors, observations, document, epsilon)
             else:
-                feature_to_be_queried, thr, thr_ind = IG(thresholds, thetas, priors, observations, document, 0.0)
+                feature_to_be_queried, thr, thr_ind = IG(exhaustive, S_thresholds, thresholds, thetas, priors, observations, document, 0.0)
             feature_value = document[feature_to_be_queried]
             if feature_value > thr:
                 feature_value = 1
@@ -292,7 +299,7 @@ def decision_tree_learning(selected_features_ofs ,thresholds,params, document, t
             if one_region:
                 break
         if (criterion == 'US'):
-            feature_to_be_queried, thr, thr_ind = US(theta_used_freq, thresholds, thetas, priors, observations, document, h_probs, hypothses)
+            feature_to_be_queried, thr, thr_ind = US(exhaustive, S_thresholds, theta_used_freq, thresholds, thetas, priors, observations, document, h_probs, hypothses)
             feature_value = document[feature_to_be_queried]
             if feature_value > thr:
                 feature_value = 1
