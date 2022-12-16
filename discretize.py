@@ -2,8 +2,16 @@ from ast import Return
 from utils import calculate_expected_cut, calculate_expected_theta, calculate_p_feature_xA, calculate_p_y_xA
 import numpy as np
 
-def calculate_threshold_sampling_distribution(S_tresholds, feature, eta=0.1):
-    pi = np.exp(eta*S_tresholds[feature,:])/np.sum(np.exp(eta*S_tresholds[feature,:]))
+def calculate_threshold_sampling_distribution(S_tresholds, feature, eta=0.01, need_log=False):
+    if not need_log:
+        pi = np.exp(eta*S_tresholds[feature,:])/np.sum(np.exp(eta*S_tresholds[feature,:]))
+    else: 
+        pi = np.exp(eta*np.log(S_tresholds[feature,:]+0.0001))/np.sum(np.exp(eta*np.log(S_tresholds[feature,:]+0.0001)))
+    if np.isnan(pi).any():
+        print('this is S_thresholds')
+        print(S_tresholds[feature,:])
+        print('this is pi')
+        print(pi)
     return pi
 
 
@@ -35,7 +43,7 @@ def find_best_threshold_EC2(thetas, observations, feature, priors, G, hypotheses
         return best_thr_ind, None
 
     else:
-        threshold_sampling_distribution = calculate_threshold_sampling_distribution(S_thresholds,feature)
+        threshold_sampling_distribution = calculate_threshold_sampling_distribution(S_thresholds,feature, need_log=True)
         best_thr_ind = np.random.choice(len(thresholds), p=threshold_sampling_distribution)
         return best_thr_ind, threshold_sampling_distribution[best_thr_ind]
 

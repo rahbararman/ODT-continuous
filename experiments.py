@@ -1,6 +1,7 @@
 import argparse, sys
 from cProfile import label
 import random
+import time
 
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -38,7 +39,7 @@ def main():
     alg = args.alg
     metric = args.metric
     #TODO: Hyperparameters for OFS
-    num_features_ofs = 12
+    num_features_ofs = 30
     eps_ofs = 0.1
     R_ofs = 10
     stepsize_ofs = 0.2
@@ -94,6 +95,7 @@ def main():
                 exhaustive = True
                 S_thresholds = None
                 if args.discretization != 'exhaustive':
+                    print('Discretization with EXP3')
                     exhaustive = False
                     S_thresholds = np.zeros((num_features, len(thresholds)))
                 
@@ -103,7 +105,12 @@ def main():
                     y_pred = []
                     y_true = []
                     sum_queries = 0 
+                    start = time.time()
                     for i in range(len(test_csv)):
+                        if(i%20==0):
+                            end = time.time()
+                            print("running time till now:")
+                            print(end - start)
                         if i%1 == 0:
                             print(i)
                         doc = test_csv.iloc[i].to_dict()
