@@ -173,7 +173,7 @@ def main():
                 numtest_progress, 
                 sums_all,  
                 utility_all]
-        f = open("total_dics_"+criterion+"-OFS"+"_"+dataset+".pkl", "wb")
+        f = open("total_dics_"+criterion+"-OFS_"+args.discretization+"_"+dataset+".pkl", "wb")
         pickle.dump(to_save,f)
         f.close()
     
