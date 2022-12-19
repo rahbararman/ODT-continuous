@@ -170,7 +170,7 @@ def calculate_total_accuracy(thetas, thresholds, data, priors, theta_used_freq, 
     return perf
 
 
-def estimate_priors_and_theta(dataset, rand_state):
+def estimate_priors_and_theta(dataset, rand_state, num_thresholds=9):
     if dataset == 'diabetes':
         data = pd.read_csv('pima-indians-diabetes.csv', header=None)
         data.columns = list(range(len(data.columns)-1)) + ['label']
@@ -202,6 +202,12 @@ def estimate_priors_and_theta(dataset, rand_state):
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
 
+    if dataset == 'fico':
+        data = pd.read_csv("fico_binary.csv.train1.csv", delimiter=';')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.7, random_state=rand_state)
     
     
     
@@ -212,11 +218,11 @@ def estimate_priors_and_theta(dataset, rand_state):
     num_classes = len(np.unique(test_csv['label'].to_numpy()))
     
     params = []
-    for i in range(9):
+    for i in range(num_thresholds):
         params.append(np.ones((num_classes, num_features, 2)))
     
     thetas = []
-    for i in range(9):
+    for i in range(num_thresholds):
         thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
     
     possible_ys = sorted(list(set(test_csv['label'].to_numpy())))
@@ -224,7 +230,7 @@ def estimate_priors_and_theta(dataset, rand_state):
     for l in possible_ys:
         priors.append(1.0/len(possible_ys))
 
-    theta_used_freq = np.ones((num_classes, num_features, 9))
+    theta_used_freq = np.ones((num_classes, num_features, num_thresholds))
         
     
     return params, thetas, np.array(priors), test_csv, data_csv, theta_used_freq
@@ -269,7 +275,15 @@ def create_dataset_for_efdt_vfdt(dataset, rand_state):
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
 
-
+    if dataset == 'fico':
+        data = pd.read_csv("fico_binary.csv.train1.csv", delimiter=';')
+        data.columns = list(range(len(data.columns)-1)) + ['label']
+        np_from_data = data.to_numpy()
+        data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.7, random_state=rand_state)
+    
+    
+    
     return X_train.to_numpy(), X_test.to_numpy(), y_train.to_numpy(), y_test.to_numpy()
 
 

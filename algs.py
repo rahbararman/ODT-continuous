@@ -212,7 +212,9 @@ def decision_tree_learning(thresholds,params, document, thetas, max_steps, prior
             else:
                 feature_to_be_queried, thr, thr_ind, G = EC2(thresholds, h_probs,document,hypothses,decision_regions, thetas, priors, observations, G, 0.0)
             #query the next feature.
+            
             feature_value = document[feature_to_be_queried]
+            feature_value = float(feature_value)
             if feature_value > thr:
                 feature_value = 1
             else:

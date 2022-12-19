@@ -39,7 +39,10 @@ def main():
 
     if (alg == 'ufodt'):
         criterion = args.criterion
-        thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
+        if int(args.thresholds)>1:
+            thresholds = list(np.linspace(0.1,0.9,int(args.thresholds)))
+        else:
+            thresholds = [0.5]
         min_num_hypotheses = int(args.minhypo)
         max_num_hypotheses = int(args.maxhypo)
         hypotheses_step = int(args.hypostep)
@@ -89,7 +92,7 @@ def main():
                         num_in_progress[i].append(len(obs.items()))
                         
                         thetas = []
-                        for i in range(9):
+                        for i in range(int(args.thresholds)):
                             thetas.append(np.random.beta(params[i][:,:,0], params[i][:,:,1]))
                         total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric=metric))
                         hypothses, decision_regions = sample_hypotheses(N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
@@ -152,10 +155,11 @@ def main():
             X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
             title = list(range(X_train.shape[1]))
             features = title[:-1]
-            vfdt = Vfdt(features=features, nmin=1, delta=0.5, tau=0.2)
+            vfdt = Vfdt(features=features, nmin=1, delta=0.01, tau=0.1)
             test_acc_in_progress = []
             for i in range(len(X_test)):
-                print(i)
+                if i%200 == 0:
+                    print(i)
                 X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
                 vfdt.update(X,y)
                 test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
