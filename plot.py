@@ -324,7 +324,7 @@ results = {}
 for file in pklfiles:
     filewithoutext = Path(file).stem
     if 'efdt' in filewithoutext:
-        _, _, _, dataset = filewithoutext.split('_')
+        _, _, _, dataset = filewithoutext.split('_')[0:4]
         total_acc_all = pickle.load(open(file, "rb" ))
         if dataset in results.keys():
             results[dataset]['efdt'] = {}
@@ -334,7 +334,7 @@ for file in pklfiles:
             results[dataset]['efdt'] = {}
             results[dataset]['efdt']['test_perf'] = total_acc_all
     elif 'vfdt' in filewithoutext:
-        _, _, _, dataset = filewithoutext.split('_')
+        _, _, _, dataset = filewithoutext.split('_')[0:4]
         total_acc_all = pickle.load(open(file, "rb" ))
         if dataset in results.keys():
             results[dataset]['vfdt'] = {}
@@ -401,6 +401,7 @@ labels = {
 
 for dataset in results.keys():
     # for dataset in ['fetal']:
+    print(dataset)
     num_hypos = list(results[dataset]['IG']['test_perf'].keys())
     for num_hypo_in_plot in num_hypos:
         plt.clf()
@@ -422,6 +423,7 @@ for dataset in results.keys():
 
 #Plot cost in progress
 for dataset in results.keys():
+    print(dataset)
     num_hypos = list(results[dataset]['IG']['numtest_progress'].keys())
 
     params, thetas, priors, test_csv, data_csv, theta_used_freq = estimate_priors_and_theta(dataset, rand_state=100)

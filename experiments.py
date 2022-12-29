@@ -80,6 +80,8 @@ def main():
                     y_pred = []
                     y_true = []
                     sum_queries = 0 
+                    print('number of data points')
+                    print(len(test_csv))
                     for i in range(len(test_csv)):
                         if i%1 == 0:
                             print(i)
@@ -126,53 +128,71 @@ def main():
         pickle.dump(to_save,f)
         f.close()
     
+    VFDT_EFDT_PARAMETER_RANGE = [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100]
+    LEAF_PREDICTIONS_EFDT = ['nb', 'mc', 'nba']
+    SPLIT_CRITERIA_EFDT = ['gini', 'info_gain']
+
     if (alg == 'efdt'):
         total_acc_all = []
-        for rand_state in random_states:
-            efdt = ExtremelyFastDecisionTreeClassifier(min_samples_reevaluate=1, grace_period=1, leaf_prediction='nb', split_confidence=0.001)
-            X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
-            test_acc_in_progress = []
-            for i in range(len(X_test)):
-                print(i)
-                X, y = X_test[i,:].reshape(1,-1), [y_test[i]]
-                efdt.partial_fit(X, y)
-                test_perf = calculate_performance(y_true=y_train, y_pred=efdt.predict(X_train), metric=metric)
-                test_acc_in_progress.append(test_perf)
-                
-            total_acc_all.append(test_acc_in_progress)  
         
-        to_save = np.array(total_acc_all)
-        print(to_save.shape)
-        
-        f = open("efdt_test_utility_"+dataset+".pkl","wb")
-        pickle.dump(to_save,f)
-        f.close()
+        for split_criterion in SPLIT_CRITERIA_EFDT:
+            for split_confidence in VFDT_EFDT_PARAMETER_RANGE:
+                for tie_threshold in VFDT_EFDT_PARAMETER_RANGE:
+                    for leaf_prediction in LEAF_PREDICTIONS_EFDT:
+                        efdt_params_name = str([split_criterion, split_confidence, tie_threshold, leaf_prediction]).replace(" ", "").replace(",","_").replace("[","_").replace("]","_").replace("'","")
+                        for rand_state in random_states:
+                            print("random state:")
+                            print(rand_state)
+                            efdt = ExtremelyFastDecisionTreeClassifier(tie_threshold=tie_threshold,min_samples_reevaluate=1, grace_period=1, leaf_prediction=leaf_prediction, split_confidence=split_confidence, split_criterion=split_criterion)
+                            X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
+                            test_acc_in_progress = []
+                            for i in range(len(X_test)):
+                                if(i%200==0):
+                                    print(i)
+                                X, y = X_test[i,:].reshape(1,-1), [y_test[i]]
+                                efdt.partial_fit(X, y)
+                                test_perf = calculate_performance(y_true=y_train, y_pred=efdt.predict(X_train), metric=metric)
+                                test_acc_in_progress.append(test_perf)
+                                
+                            total_acc_all.append(test_acc_in_progress)  
+                        
+                        to_save = np.array(total_acc_all)
+                        print(to_save.shape)
+                        
+                        f = open("VFDTEFDTDICS/efdt_test_utility_"+dataset+efdt_params_name+".pkl","wb")
+                        pickle.dump(to_save,f)
+                        f.close()
 
     if (alg == 'vfdt'):
         print('VFDT')
         total_acc_all = []
-        for rand_state in random_states:
-            X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
-            title = list(range(X_train.shape[1]))
-            features = title[:-1]
-            vfdt = Vfdt(features=features, nmin=1, delta=0.01, tau=0.1)
-            test_acc_in_progress = []
-            for i in range(len(X_test)):
-                if i%200 == 0:
-                    print(i)
-                X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
-                vfdt.update(X,y)
-                test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
-                test_acc_in_progress.append(test_perf)
+        for delta in VFDT_EFDT_PARAMETER_RANGE:
+            for tau in VFDT_EFDT_PARAMETER_RANGE:
+                vfdt_params_name = str([delta,tau]).replace(" ", "").replace(",","_").replace("[","_").replace("]","_").replace("'","")
+                for rand_state in random_states:
+                    print("random state:")
+                    print(rand_state)
+                    X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
+                    title = list(range(X_train.shape[1]))
+                    features = title[:-1]
+                    vfdt = Vfdt(features=features, nmin=1, delta=delta, tau=tau)
+                    test_acc_in_progress = []
+                    for i in range(len(X_test)):
+                        if i%200 == 0:
+                            print(i)
+                        X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
+                        vfdt.update(X,y)
+                        test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
+                        test_acc_in_progress.append(test_perf)
+                        
+                    total_acc_all.append(test_acc_in_progress)  
                 
-            total_acc_all.append(test_acc_in_progress)  
-        
-        to_save = np.array(total_acc_all)
-        print(to_save.shape)
-        
-        f = open("vfdt_test_utility_"+dataset+".pkl","wb")
-        pickle.dump(to_save,f)
-        f.close()
+                to_save = np.array(total_acc_all)
+                print(to_save.shape)
+                
+                f = open("VFDTEFDTDICS/vfdt_test_utility_"+dataset+vfdt_params_name+".pkl","wb")
+                pickle.dump(to_save,f)
+                f.close()
 
 if __name__=="__main__":
     main()
