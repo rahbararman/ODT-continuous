@@ -203,22 +203,22 @@ def estimate_priors_and_theta(dataset, rand_state, num_thresholds=9):
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
 
     if dataset == 'fico':
-        # data = pd.read_csv("fico_binary.csv.train1.csv", delimiter=';')
-        # data.columns = list(range(len(data.columns)-1)) + ['label']
-        # np_from_data = data.to_numpy()
-        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        # X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.7, random_state=rand_state)
         data = pd.read_csv("fico_binary.csv.train2.csv", delimiter=';')
         data.columns = list(range(len(data.columns)-1)) + ['label']
         np_from_data = data.to_numpy()
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        X_test, y_test = data_new.iloc[:,:-1], data_new['label']
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.9, random_state=rand_state)
+        # data = pd.read_csv("fico_binary.csv.train2.csv", delimiter=';')
+        # data.columns = list(range(len(data.columns)-1)) + ['label']
+        # np_from_data = data.to_numpy()
+        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        # X_test, y_test = data_new.iloc[:,:-1], data_new['label']
 
-        data = pd.read_csv("fico_binary.csv.test2.csv", delimiter=';')
-        data.columns = list(range(len(data.columns)-1)) + ['label']
-        np_from_data = data.to_numpy()
-        data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        X_train, y_train = data_new.iloc[:,:-1], data_new['label']
+        # data = pd.read_csv("fico_binary.csv.test2.csv", delimiter=';')
+        # data.columns = list(range(len(data.columns)-1)) + ['label']
+        # np_from_data = data.to_numpy()
+        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        # X_train, y_train = data_new.iloc[:,:-1], data_new['label']
 
     if dataset == 'compas':
         data = pd.read_csv("compas-binary.csv.train5.csv", delimiter=';')
@@ -299,22 +299,22 @@ def create_dataset_for_efdt_vfdt(dataset, rand_state):
         X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.6, random_state=rand_state)
 
     if dataset == 'fico':
-        # data = pd.read_csv("fico_binary.csv.train1.csv", delimiter=';')
-        # data.columns = list(range(len(data.columns)-1)) + ['label']
-        # np_from_data = data.to_numpy()
-        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        # X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.7, random_state=rand_state)
         data = pd.read_csv("fico_binary.csv.train2.csv", delimiter=';')
         data.columns = list(range(len(data.columns)-1)) + ['label']
         np_from_data = data.to_numpy()
         data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        X_test, y_test = data_new.iloc[:,:-1], data_new['label']
+        X_train, X_test, y_train, y_test = train_test_split(data_new.iloc[:,:-1], data_new['label'], test_size=0.9, random_state=rand_state)
+        # data = pd.read_csv("fico_binary.csv.train2.csv", delimiter=';')
+        # data.columns = list(range(len(data.columns)-1)) + ['label']
+        # np_from_data = data.to_numpy()
+        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        # X_test, y_test = data_new.iloc[:,:-1], data_new['label']
 
-        data = pd.read_csv("fico_binary.csv.test2.csv", delimiter=';')
-        data.columns = list(range(len(data.columns)-1)) + ['label']
-        np_from_data = data.to_numpy()
-        data_new = pd.DataFrame(np_from_data, columns=data.columns)
-        X_train, y_train = data_new.iloc[:,:-1], data_new['label']
+        # data = pd.read_csv("fico_binary.csv.test2.csv", delimiter=';')
+        # data.columns = list(range(len(data.columns)-1)) + ['label']
+        # np_from_data = data.to_numpy()
+        # data_new = pd.DataFrame(np_from_data, columns=data.columns)
+        # X_train, y_train = data_new.iloc[:,:-1], data_new['label']
 
     if dataset == 'compas':
         data = pd.read_csv("compas-binary.csv.train5.csv", delimiter=';')
