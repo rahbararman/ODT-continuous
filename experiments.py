@@ -39,7 +39,7 @@ def main():
     alg = args.alg
     metric = args.metric
     #TODO: Hyperparameters for OFS
-    num_features_ofs = 30
+    num_features_ofs = 10
     eps_ofs = 0.1
     R_ofs = 10
     stepsize_ofs = 0.2
@@ -106,6 +106,7 @@ def main():
                     y_true = []
                     sum_queries = 0 
                     start = time.time()
+                    start_time = time.time()
                     for i in range(len(test_csv)):
                         if(i%20==0):
                             end = time.time()
@@ -148,7 +149,9 @@ def main():
                         total_in_progress[i].append(calculate_total_accuracy(thetas=thetas, thresholds=thresholds, data=data_csv, priors=priors, theta_used_freq=theta_used_freq, metric=metric))
                         hypothses, decision_regions = sample_hypotheses(selected_features_ofs=selected_features_ofs,N=num_sampled_hypos, thetas=thetas, priors=priors, random_state=rand_state, total_samples=num_sampled_hypos, theta_used_freq=theta_used_freq)
                     accs.append(calculate_performance(y_true=y_true, y_pred=y_pred, metric=metric))
-
+                    print(alg)
+                    print(criterion)
+                    print("--- %s seconds ---" % (time.time() - start_time))
                 all_sum.append(sum_queries)
                 accs_all.append(accs)
                 print('all accuracies so far:')
