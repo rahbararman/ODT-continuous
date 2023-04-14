@@ -366,7 +366,7 @@ def sample_hypotheses(N, thetas, priors, random_state, total_samples, theta_used
                 generated_feature = np.random.choice(a=[0,1], p=[1-expected_theta_ij,expected_theta_ij])
                 sampled_h = sampled_h + str(generated_feature)
             #determine region for sampled hypothesis
-            #region of h_i = argmax_j p(y_j|h_i) based on theta
+            #Decision region of h_i = argmax_j p(y_j|h_i) based on theta
             #1.compute p(y|sampled h) for all y
             p_h_y = 1
             for feature, value in enumerate(sampled_h):
