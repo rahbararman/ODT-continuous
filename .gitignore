@@ -6,3 +6,10 @@ test.ipynb
 test-efdf.py
 job_local.sh
 Plots-rebuttal.ipynb
+arXiv/
+Results/
+**/*.pkl
+**/*.csv
+EC2-DecisionTree-Online-multiple-datasets.ipynb
+jobEC2.*
+vfdt.py

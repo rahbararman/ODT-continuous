@@ -163,36 +163,36 @@ def main():
                         pickle.dump(to_save,f)
                         f.close()
 
-    if (alg == 'vfdt'):
-        print('VFDT')
-        total_acc_all = []
-        for delta in VFDT_EFDT_PARAMETER_RANGE:
-            for tau in VFDT_EFDT_PARAMETER_RANGE:
-                vfdt_params_name = str([delta,tau]).replace(" ", "").replace(",","_").replace("[","_").replace("]","_").replace("'","")
-                for rand_state in random_states:
-                    print("random state:")
-                    print(rand_state)
-                    X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
-                    title = list(range(X_train.shape[1]))
-                    features = title[:-1]
-                    vfdt  = Vfdt(features=features, nmin=1, delta=delta, tau=tau)
-                    test_acc_in_progress = []
-                    for i in range(len(X_test)):
-                        if i%200 == 0:
-                            print(i)
-                        X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
-                        vfdt.update(X,y)
-                        test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
-                        test_acc_in_progress.append(test_perf)
+    # if (alg == 'vfdt'):
+    #     print('VFDT')
+    #     total_acc_all = []
+    #     for delta in VFDT_EFDT_PARAMETER_RANGE:
+    #         for tau in VFDT_EFDT_PARAMETER_RANGE:
+    #             vfdt_params_name = str([delta,tau]).replace(" ", "").replace(",","_").replace("[","_").replace("]","_").replace("'","")
+    #             for rand_state in random_states:
+    #                 print("random state:")
+    #                 print(rand_state)
+    #                 X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
+    #                 title = list(range(X_train.shape[1]))
+    #                 features = title[:-1]
+    #                 vfdt  = Vfdt(features=features, nmin=1, delta=delta, tau=tau)
+    #                 test_acc_in_progress = []
+    #                 for i in range(len(X_test)):
+    #                     if i%200 == 0:
+    #                         print(i)
+    #                     X, y = X_test[i].reshape(1,-1), y_test[i].reshape(1,)
+    #                     vfdt.update(X,y)
+    #                     test_perf = calculate_performance(y_true=y_train, y_pred=vfdt.predict(X_train), metric=metric)
+    #                     test_acc_in_progress.append(test_perf)
                         
-                    total_acc_all.append(test_acc_in_progress)  
+    #                 total_acc_all.append(test_acc_in_progress)  
                 
-                to_save = np.array(total_acc_all)
-                print(to_save.shape)
+    #             to_save = np.array(total_acc_all)
+    #             print(to_save.shape)
                 
-                f = open("VFDTEFDTDICS/vfdt_test_utility_"+dataset+vfdt_params_name+".pkl","wb")
-                pickle.dump(to_save,f)
-                f.close()
+    #             f = open("VFDTEFDTDICS/vfdt_test_utility_"+dataset+vfdt_params_name+".pkl","wb")
+    #             pickle.dump(to_save,f)
+    #             f.close()
 
 if __name__=="__main__":
     main()
