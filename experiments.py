@@ -175,7 +175,7 @@ def main():
                     X_train, X_test, y_train, y_test = create_dataset_for_efdt_vfdt(dataset, rand_state)
                     title = list(range(X_train.shape[1]))
                     features = title[:-1]
-                    vfdt = Vfdt(features=features, nmin=1, delta=delta, tau=tau)
+                    vfdt  = Vfdt(features=features, nmin=1, delta=delta, tau=tau)
                     test_acc_in_progress = []
                     for i in range(len(X_test)):
                         if i%200 == 0:
