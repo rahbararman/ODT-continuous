@@ -8,3 +8,10 @@ job_local.sh
 Plots-rebuttal.ipynb
 arxiv
 Results
+*.csv
+**/*.csv
+*.ipynb
+*.pkl
+*.pdf
+jobEC2.*
+
